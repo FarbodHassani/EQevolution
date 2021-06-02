@@ -579,9 +579,9 @@ void loadBGFunctions(background & class_background, mg_cosmology & quintessence,
 	char zname[8];
 	char * ptr;
 
-	background_output_titles(&class_background, coltitles);
-  sprintf(zname, "z");
-  cout<<"qname: "<<" z: "<< coltitles <<endl;
+	// background_output_titles(&class_background, coltitles);
+  // sprintf(zname, "z");
+  // cout<<"qname: "<<" z: "<< coltitles <<endl;
 
   // if (strncmp(qname,"vx",strlen("vx")) == 0)
 	// {

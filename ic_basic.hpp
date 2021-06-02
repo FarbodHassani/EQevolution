@@ -1763,9 +1763,6 @@ void generateIC_basic(metadata & sim, icsettings & ic, cosmology & cosmo, mg_cos
  // Note that in the below we read delta_fld and theta_fld so we have to convert to pi_k and zeta!
  loadTransferFunctions(class_background, class_perturbs, quintessence, tk_d_mg, tk_t_mg, "vx", sim.boxsize, sim.z_in, cosmo.h);
 
- // gsl_spline * bg_data = NULL;
- // loadBGFunctions(class_background, quintessence, bg_data, "H", cosmo.h);
-
  npts = tk_d_mg->size;
  k_mg = (double *) malloc (npts * sizeof(double));
  scalar_field = (double *) malloc(npts * sizeof(double));

@@ -127,6 +127,34 @@ void projection_T00_project(background & class_background, perturbs & class_pert
 		gsl_spline_free(tk2);
 	}
 
+  // coupled quintessence
+  // Todo: quintessence enable flag
+  if (a < 1. )
+  {
+    loadTransferFunctions(class_background, class_perturbs, quintessence, tk1, tk2, "vx", sim.boxsize, (1. / a) - 1., cosmo.h);
+
+    if (delta == NULL)
+    {
+      n = tk1->size;
+      delta = (double *) malloc(n * sizeof(double));
+      k = (double *) malloc(n * sizeof(double));
+
+      for (i = 0; i < n; i++)
+      {
+        delta[i] = -tk1->y[i] * coeff * Omega_fld * M_PI * sqrt(Pk_primordial(tk1->x[i] * cosmo.h / sim.boxsize, ic) / tk1->x[i]) / tk1->x[i];
+        k[i] = tk1->x[i];
+      }
+    }
+    else
+    {
+      for (i = 0; i < n; i++)
+        delta[i] -= tk1->y[i] * coeff * Omega_fld * M_PI * sqrt(Pk_primordial(tk1->x[i] * cosmo.h / sim.boxsize, ic) / tk1->x[i]) / tk1->x[i];
+    }
+
+    gsl_spline_free(tk1);
+    gsl_spline_free(tk2);
+  }
+
 	for (p = 0; p < cosmo.num_ncdm; p++)
 	{
 		if (a < 1. / (sim.z_switch_deltancdm[p] + 1.) && cosmo.Omega_ncdm[p] > 0)
