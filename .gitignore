@@ -1,3 +1,17 @@
 
 .DS_Store
 gevolution
+output/lcdm_pk000_B.dat
+output/lcdm_pk000_chi.dat
+output/lcdm_pk000_hij.dat
+output/lcdm_pk000_phi.dat
+output/lcdm_pk000_pi.dat
+output/lcdm_pk000_V_pi.dat
+output/lcdm_pk001_B.dat
+output/lcdm_pk001_chi.dat
+output/lcdm_pk001_hij.dat
+output/lcdm_pk001_phi.dat
+output/lcdm_pk001_pi.dat
+output/lcdm_pk001_V_pi.dat
+output/quintessence_background.dat
+output/quintessence_settings_used.ini
