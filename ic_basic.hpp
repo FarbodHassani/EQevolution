@@ -1763,6 +1763,16 @@ void generateIC_basic(metadata & sim, icsettings & ic, cosmology & cosmo, mg_cos
  // Note that in the below we read delta_fld and theta_fld so we have to convert to pi_k and zeta!
  loadTransferFunctions(class_background, class_perturbs, quintessence, tk_d_mg, tk_t_mg, "vx", sim.boxsize, sim.z_in, cosmo.h);
 
+ gsl_spline * bg_data = NULL;
+ gsl_interp_accel * acc_bg_data;
+ acc_bg_data = gsl_interp_accel_alloc();
+ //
+ // loadBGFunctions(class_background,  quintessence, bg_data, "z", sim.z_in);
+ // cout<<"value: "<<gsl_spline_eval(bg_data,0.08,acc_bg_data)<<endl;
+ // cout<<"value: "<<gsl_spline_eval(bg_data,1.0,acc_bg_data)<<endl;
+ loadBGFunctions(class_background,  quintessence, bg_data, "H [1/Mpc]", sim.z_in);
+ // cout<<"value H: "<<gsl_spline_eval(bg_data,1.019367,acc_bg_data)*1.019367/gsl_spline_eval(bg_data,1.0000,acc_bg_data)<<endl;
+
  npts = tk_d_mg->size;
  k_mg = (double *) malloc (npts * sizeof(double));
  scalar_field = (double *) malloc(npts * sizeof(double));

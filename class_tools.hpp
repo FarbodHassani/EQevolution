@@ -550,6 +550,8 @@ void loadTransferFunctions(background & class_background, perturbs & class_pertu
 
 
 
+
+#ifdef HAVE_CLASS_BG
 //////////////////////////
 // Load background functions
 //////////////////////////
@@ -568,137 +570,85 @@ void loadTransferFunctions(background & class_background, perturbs & class_pertu
 //
 //////////////////////////
 
-void loadBGFunctions(background & class_background, mg_cosmology & quintessence, gsl_spline * & bg_data, const char * qname, double h)
+void loadBGFunctions(background & class_background, mg_cosmology & quintessence, gsl_spline * & bg_data, const char * qname, double z_in)
 {
 	int cols = 0, bgcol = -1, zcol = -1;
-	double * z;
+	double * a;
 	double * bg;
 	double * data;
 	char coltitles[_MAXTITLESTRINGLENGTH_] = {0};
-	char bgname[16];
 	char zname[8];
 	char * ptr;
+  int bg_size=0;
+  int num_points=30;
+  double dz=0.005/num_points;
+  double z1,z2;
 
-	// background_output_titles(&class_background, coltitles);
-  // sprintf(zname, "z");
-  // cout<<"qname: "<<" z: "<< coltitles <<endl;
+	background_output_titles(&class_background, coltitles);
+  sprintf(zname, "z");
+	ptr = strtok(coltitles, _DELIMITER_);
+	while (ptr != NULL)
+	{
+    if (strncmp(ptr, qname, strlen(qname)) == 0) bgcol = cols;
+    else if (strncmp(ptr, zname, strlen(zname)) == 0) zcol = cols;
+		cols++;
+    ptr = strtok(NULL, _DELIMITER_);
+  }
+	if (zcol < 0 ||bgcol < 0 )
+	{
+		COUT << " error in loadBGFunctions (HAVE_CLASS_BG)! Unable to identify requested columns!" << endl;
+		parallel.abortForce();
+	}
+	data = (double *) malloc(sizeof(double) * cols * class_background.bt_size);
+  if(!data)
+  {
+    COUT << " error in loadBGFunctions (HAVE_CLASS_BG)! Unable to allocate memory!" << endl;
+    parallel.abortForce();
+  }
+  background_output_data(&class_background, cols, data);
+  for(bg_size=0;data[bg_size*cols + zcol]>z_in * 1.1;bg_size++){};
 
-  // if (strncmp(qname,"vx",strlen("vx")) == 0)
-	// {
-	// 	sprintf(dname, "vx_smg");
-	// 	sprintf(tname, "vx_prime_smg");
-	// 	h /= boxsize;
-  // }
-  //
-	// else if (qname != NULL)
-	// {
-	// 	sprintf(dname, "d_%s", qname);
-	// 	sprintf(tname, "t_%s", qname);
-	// 	h /= boxsize;
-  // }
-	// else
-	// {
-	// 	sprintf(dname, "phi");
-	// 	sprintf(tname, "psi");
-	// 	h = 1.;
-	// }
-	// sprintf(kname, "k (h/Mpc)");
-  //
-  //
-	// ptr = strtok(coltitles, _DELIMITER_);
-	// while (ptr != NULL)
-	// {
-  //   if (strncmp(ptr, dname, strlen(dname)) == 0) dcol = cols;
-	// 	else if (strncmp(ptr, tname, strlen(tname)) == 0) tcol = cols;
-	// 	else if (strncmp(ptr, kname, strlen(kname)) == 0) kcol = cols;
-  //   // quintessence gauge transformation
-  //   else if (strncmp(ptr, "phi", strlen("phi")) == 0) phicol = cols;
-  //   else if (strncmp(ptr, "psi", strlen("psi")) == 0) psicol = cols;
-  //   else if (strncmp(ptr, "eta_prime", strlen("eta_prime")) == 0) eta_primecol = cols;
-  //   else if (strncmp(ptr, "eta", strlen("eta")) == 0) etacol = cols;
-  //   else if (strncmp(ptr, "h_prime", strlen("h_prime")) == 0) h_primecol = cols;
-	// 	cols++;
-  //   	ptr = strtok(NULL, _DELIMITER_);
-  // }
-  //
-	// if (dcol < 0 || (tcol < 0 && strncmp(qname,"cdm",strlen("cdm")) != 0 ) || kcol < 0 || (qname != NULL && (phicol < 0 || psicol < 0 || etacol < 0 || h_primecol < 0 || eta_primecol < 0) ) )
-	// {
-	// 	COUT << " error in loadTransferFunctions (HAVE_CLASS)! Unable to identify requested columns!" << endl;
-	// 	parallel.abortForce();
-	// }
-  //
-	// data = (double *) malloc(sizeof(double) * cols*class_perturbs.k_size[class_perturbs.index_md_scalars]);
-	// k = (double *) malloc(sizeof(double) * class_perturbs.k_size[class_perturbs.index_md_scalars]);
-	// tk_d = (double *) malloc(sizeof(double) * class_perturbs.k_size[class_perturbs.index_md_scalars]);
-	// tk_t = (double *) malloc(sizeof(double) * class_perturbs.k_size[class_perturbs.index_md_scalars]);
-  //
-	// perturb_output_data(&class_background, &class_perturbs, class_format, z, cols, data);
-  //
-	// for (int i = 0; i < class_perturbs.k_size[class_perturbs.index_md_scalars]; i++)
-	// {
-	// 	k[i] = data[i*cols + kcol] * boxsize;
-	// 	tk_d[i] = data[i*cols + dcol];
-  //   if (strncmp(qname,"cdm",strlen("cdm")) != 0)
-  //   {
-	// 	  tk_t[i] = data[i*cols + tcol] / h;
-  //   }
-  //   else
-  //   {
-  //     tk_t[i] = 0.;
-  //   }
-  //   if (strncmp(qname,"vx",strlen("vx")) == 0)
-  //    {
-  //     alpha = (data[i*cols + h_primecol] + 6.0*data[i*cols + eta_primecol])/(2.0*data[i*cols + kcol]*data[i*cols + kcol]);
-  //     alpha_prime =data[i*cols + psicol] + data[i*cols + phicol] - data[i*cols + etacol];
-  //     tk_d[i] += alpha ;
-  //     tk_t[i] += alpha_prime ;
-  //    }
-  //   else if (qname != NULL)
-  //   {
-  //     alpha  = (data[i*cols + h_primecol] + 6.0*data[i*cols + eta_primecol])/(2.0*data[i*cols + kcol]*data[i*cols + kcol]);
-  //     alpha_prime =  data[i*cols + psicol] + data[i*cols + phicol] - data[i*cols + etacol];
-  //     tk_t[i] +=  alpha * data[i*cols + kcol]*data[i*cols + kcol] / h;
-  //     if (strncmp(qname,"g",strlen("g")) || strncmp(qname,"ncdm",strlen("ncdm")) == 0)
-  //     {
-  //       tk_d[i] += -alpha * 4. * Hconf_class;
-  //     }
-  //     else if (strncmp(qname,"cdm",strlen("cdm")) == 0)
-  //     {
-  //       tk_d[i] += -alpha * 3. * Hconf_class;
-  //     }
-  //     else if (strncmp(qname,"b",strlen("b")) == 0)
-  //     {
-  //       tk_d[i] += -alpha * 3. * Hconf_class;
-  //     }
-  //     else if (strncmp(qname,"tot",strlen("tot")) == 0)
-  //     {
-  //       tk_d[i] += -alpha * 3. * Hconf_class * (Omega_m + 4. * Omega_rad/3. + Omega_mg * (1. + w_mg));
-  //     }
-  //   }
-  //
-	// 	if (i > 0)
-	// 	{
-	// 		if (k[i] < k[i-1])
-	// 		{
-	// 			COUT << " error in loadTransferFunctions (HAVE_CLASS)! k-values are not strictly ordered." << endl;
-	// 			parallel.abortForce();
-	// 		}
-	// 	}
-	// }
+	a = (double *) malloc(sizeof(double) * (class_background.bt_size-bg_size+num_points));
+	bg = (double *) malloc(sizeof(double) * (class_background.bt_size-bg_size+num_points));
+  if(!a || !bg)
+  {
+    COUT << " error in loadBGFunctions (HAVE_CLASS_BG)! Unable to allocate memory!" << endl;
+    parallel.abortForce();
+  }
 
-	// free(data);
+	background_output_data(&class_background, cols, data);
 
-	// tk_delta = gsl_spline_alloc(gsl_interp_cspline, class_perturbs.k_size[class_perturbs.index_md_scalars]);
-	// tk_theta = gsl_spline_alloc(gsl_interp_cspline, class_perturbs.k_size[class_perturbs.index_md_scalars]);
-  //
-	// gsl_spline_init(tk_delta, k, tk_d, class_perturbs.k_size[class_perturbs.index_md_scalars]);
-	// gsl_spline_init(tk_theta, k, tk_t, class_perturbs.k_size[class_perturbs.index_md_scalars]);
-  //
-	// free(k);
-	// free(tk_d);
-	// free(tk_t);
+	for (int i = bg_size; i < class_background.bt_size; i++)
+	{
+		a[i-bg_size] = 1./(1. + data[i*cols + zcol]);
+		bg[i-bg_size] = data[i*cols + bgcol];
+    if (i > bg_size)
+      {
+        if (a[i-bg_size] < a[i-bg_size-1])
+        {
+          COUT << " error in loadBGFunctions (HAVE_CLASS)! redshift-values are not strictly ordered." << endl;
+          parallel.abortForce();
+        }
+      }
+  }
+
+  for (int i=0;i<num_points;i++)
+  {
+    z1 = 1./a[class_background.bt_size-bg_size+i-1] -1.;
+    z2 = 1./a[class_background.bt_size-bg_size+i-2] -1.;
+    a[class_background.bt_size-bg_size+i] =  a[class_background.bt_size-bg_size+i-1] + 1./(1.+dz);
+    bg[class_background.bt_size-bg_size+i] = bg[class_background.bt_size-bg_size+i-1] - dz *(bg[class_background.bt_size-bg_size+i-1] -  bg[class_background.bt_size-bg_size+i-2])/(z1 - z2);
+  }
+  // cout<<"z0: "<<a[class_background.bt_size-bg_size-1]<<" a_neg"<<a[class_background.bt_size-bg_size]<<" H0:"<<bg[class_background.bt_size-bg_size-1]<<" H1: "<<bg[class_background.bt_size-bg_size]<<endl;
+
+	free(data);
+	bg_data = gsl_spline_alloc(gsl_interp_cspline, class_background.bt_size-bg_size+num_points);
+	gsl_spline_init(bg_data, a, bg, class_background.bt_size-bg_size+num_points);
+
+	free(a);
+	free(bg);
 }
 
 #endif
-
+#endif
 #endif

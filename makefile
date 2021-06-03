@@ -26,18 +26,22 @@ DGEVOLUTION  += -DEXACT_OUTPUT_REDSHIFTS
 DGEVOLUTION  += -DHAVE_CLASS    # requires LIB -lclass
 #DGEVOLUTION  += -DHAVE_HEALPIX  # requires LIB -lchealpix
 
+DMGEVOLUTION  := -DHAVE_CLASS_BG  # requires LIB -lclass, You must turn on -DHAVE_CLASS
+
 # further compiler options
 OPT          := -O3 -std=c++11
 
 $(EXEC): $(SOURCE) $(HEADERS) makefile
-	$(COMPILER) $< -o $@ $(OPT) $(DLATFIELD2) $(DGEVOLUTION) $(INCLUDE) $(LIB)
+	$(COMPILER) $< -o $@ $(OPT) $(DLATFIELD2) $(DGEVOLUTION) $(DMGEVOLUTION) $(INCLUDE) $(LIB)
 	
 lccat: lccat.cpp
-	$(COMPILER) $< -o $@ $(OPT) $(DGEVOLUTION) $(INCLUDE)
+	$(COMPILER) $< -o $@ $(OPT) $(DGEVOLUTION) $(DMGEVOLUTION) $(INCLUDE)
 	
 lcmap: lcmap.cpp
-	$(COMPILER) $< -o $@ $(OPT) -fopenmp $(DGEVOLUTION) $(INCLUDE) $(LIB) $(HPXCXXLIB)
+	$(COMPILER) $< -o $@ $(OPT) -fopenmp $(DGEVOLUTION) $(DMGEVOLUTION) $(INCLUDE) $(LIB) $(HPXCXXLIB)
 
 clean:
 	-rm -f $(EXEC) lccat lcmap
+
+
 
