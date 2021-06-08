@@ -569,10 +569,10 @@ void loadTransferFunctions(background & class_background, perturbs & class_pertu
 // Returns:
 //
 //////////////////////////
-
-void loadBGFunctions(background & class_background, mg_cosmology & quintessence, gsl_spline * & bg_data, const char * qname, double z_in)
+// Todo: check the extrapolation and see if we have many points in the extrapolation do we get a better results as 3d order spline tries to fit a 3d order equations.
+void loadBGFunctions(background & class_background, mg_cosmology & quintessence, gsl_spline * & bg_data, gsl_interp_accel * & bg_data_accelator, const char * qname, double z_in)
 {
-	int cols = 0, bgcol = -1, zcol = -1;
+	int cols = 0, bgcol = -1, zcol = -1, bgcol2 = -1;
 	double * a;
 	double * bg;
 	double * data;
@@ -589,12 +589,27 @@ void loadBGFunctions(background & class_background, mg_cosmology & quintessence,
 	ptr = strtok(coltitles, _DELIMITER_);
 	while (ptr != NULL)
 	{
-    if (strncmp(ptr, qname, strlen(qname)) == 0) bgcol = cols;
-    else if (strncmp(ptr, zname, strlen(zname)) == 0) zcol = cols;
+    if (strncmp(qname,"H_prime",strlen("H_prime")) == 0)
+    {
+      if (strncmp(ptr, "(.)rho_tot", strlen("(.)rho_tot")) == 0) bgcol = cols;
+      else if (strncmp(ptr, "(.)p_tot", strlen("(.)p_tot")) == 0) bgcol2 = cols;
+      else if (strncmp(ptr, zname, strlen(zname)) == 0) zcol = cols;
+    }
+    else if (strncmp(qname,"w_mg",strlen("w_mg")) == 0)
+    {
+      if (strncmp(ptr, "(.)rho_smg", strlen("(.)rho_smg")) == 0) bgcol = cols;
+      else if (strncmp(ptr, "(.)p_smg", strlen("(.)p_smg")) == 0) bgcol2 = cols;
+      else if (strncmp(ptr, zname, strlen(zname)) == 0) zcol = cols;
+    }
+    else
+    {
+      if (strncmp(ptr, qname, strlen(qname)) == 0) bgcol = cols;
+      else if (strncmp(ptr, zname, strlen(zname)) == 0) zcol = cols;
+    }
 		cols++;
     ptr = strtok(NULL, _DELIMITER_);
-  }
-	if (zcol < 0 ||bgcol < 0 )
+    }
+	if (zcol < 0 || bgcol < 0 || ((strncmp(qname,"H_prime",strlen("H_prime")) == 0) && bgcol2 < 0) || ((strncmp(qname,"w_mg",strlen("w_mg")) == 0) && bgcol2 < 0) )
 	{
 		COUT << " error in loadBGFunctions (HAVE_CLASS_BG)! Unable to identify requested columns!" << endl;
 		parallel.abortForce();
@@ -621,7 +636,18 @@ void loadBGFunctions(background & class_background, mg_cosmology & quintessence,
 	for (int i = bg_size; i < class_background.bt_size; i++)
 	{
 		a[i-bg_size] = 1./(1. + data[i*cols + zcol]);
-		bg[i-bg_size] = data[i*cols + bgcol];
+    if (strncmp(qname,"H_prime",strlen("H_prime")) == 0)
+    {
+      bg[i-bg_size] = -(3.0/2.0) * a[i-bg_size] *  (data[i*cols + bgcol] + data[i*cols + bgcol2]);
+    }
+    else if (strncmp(qname,"w_mg",strlen("w_mg")) == 0)
+    {
+      bg[i-bg_size] = data[i*cols + bgcol2]/data[i*cols + bgcol];
+    }
+   else
+		{
+        bg[i-bg_size] = data[i*cols + bgcol];
+    }
     if (i > bg_size)
       {
         if (a[i-bg_size] < a[i-bg_size-1])
@@ -639,12 +665,11 @@ void loadBGFunctions(background & class_background, mg_cosmology & quintessence,
     a[class_background.bt_size-bg_size+i] =  a[class_background.bt_size-bg_size+i-1] + 1./(1.+dz);
     bg[class_background.bt_size-bg_size+i] = bg[class_background.bt_size-bg_size+i-1] - dz *(bg[class_background.bt_size-bg_size+i-1] -  bg[class_background.bt_size-bg_size+i-2])/(z1 - z2);
   }
-  // cout<<"z0: "<<a[class_background.bt_size-bg_size-1]<<" a_neg"<<a[class_background.bt_size-bg_size]<<" H0:"<<bg[class_background.bt_size-bg_size-1]<<" H1: "<<bg[class_background.bt_size-bg_size]<<endl;
 
 	free(data);
 	bg_data = gsl_spline_alloc(gsl_interp_cspline, class_background.bt_size-bg_size+num_points);
+  bg_data_accelator = gsl_interp_accel_alloc();
 	gsl_spline_init(bg_data, a, bg, class_background.bt_size-bg_size+num_points);
-
 	free(a);
 	free(bg);
 }

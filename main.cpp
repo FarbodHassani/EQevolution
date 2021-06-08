@@ -333,38 +333,52 @@ int main(int argc, char **argv)
 	a = 1. / (1. + sim.z_in);
 	tau = particleHorizon(a, fourpiG, cosmo);
 
-	// Quintessence background
-	// The import function should be in this position because it relies on fourpiG value to correctly normalize input values
-	COUT << endl << " Reading quintessence background file." << endl;
+  cout<<"I'm HERE: "<<endl;
+  #ifdef HAVE_CLASS_BG
+  #ifdef HAVE_CLASS
+  initializeCLASSstructures(sim, ic, cosmo, quintessence, class_background, class_thermo, class_perturbs, params, numparam);
+  cout<<"I'm HERE2: "<<endl;
+  loadBGFunctions(class_background, quintessence, quintessence.spline_H, quintessence.acc_H, "H [1/Mpc]", sim.z_in);
+  loadBGFunctions(class_background, quintessence, quintessence.spline_H_prime, quintessence.acc_H_prime, "H_prime", sim.z_in);
+  loadBGFunctions(class_background, quintessence, quintessence.spline_w_mg,quintessence.acc_w_mg,"w_mg",sim.z_in);
+  double a_eval = 0.5;
+  COUT << " Quintessence TEST: Hubble parameter at z_in: " << gsl_spline_eval(quintessence.spline_H,a,quintessence.acc_H) << " , while GR value " << Hconf(a, fourpiG, cosmo) << endl;
 
-	// Calling function to import background data and testing the correct import
+
+  #else
+  COUT << " Quintessence background from hiclass requested while CLASS is not defined: an error occurred while importing background data." << endl;
+  parallel.abortForce();
+  #endif
+
+  #else
+
 	if( mg_import(a, fourpiG, &quintessence, quintessence.mg_bkg_file) ){
-
+    // The import function should be in this position because it relies on fourpiG value to correctly normalize input values
+    COUT << endl << " Reading quintessence background file." << endl;
+    // Calling function to import background data and testing the correct import
 		COUT << " File correctly imported." << endl;
 		COUT << " Size of imported background vector: " << quintessence.a_vec.size() << endl;
 		// Definitions for interpolation (spline method), with accelerators
-		quintessence.acc_H = gsl_interp_accel_alloc();
-		quintessence.spline_H = gsl_spline_alloc(gsl_interp_cspline,quintessence.last_int);
-		quintessence.acc_H_prime = gsl_interp_accel_alloc();
-		quintessence.spline_H_prime = gsl_spline_alloc(gsl_interp_cspline,quintessence.last_int);
-		quintessence.acc_w_mg = gsl_interp_accel_alloc();
-		quintessence.spline_w_mg = gsl_spline_alloc(gsl_interp_cspline,quintessence.last_int);
-		quintessence.acc_Omega_m = gsl_interp_accel_alloc();
-		quintessence.spline_Omega_m = gsl_spline_alloc(gsl_interp_cspline,quintessence.last_int);
-		quintessence.acc_Omega_rad = gsl_interp_accel_alloc();
-		quintessence.spline_Omega_rad = gsl_spline_alloc(gsl_interp_cspline,quintessence.last_int);
-		quintessence.acc_Omega_mg = gsl_interp_accel_alloc();
-		quintessence.spline_Omega_mg = gsl_spline_alloc(gsl_interp_cspline,quintessence.last_int);
-		quintessence.acc_particleHorizon = gsl_interp_accel_alloc();
-	  quintessence.spline_particleHorizon = gsl_spline_alloc(gsl_interp_cspline,quintessence.last_int);
-		quintessence.acc_mg_field = gsl_interp_accel_alloc();
-	  quintessence.spline_mg_field = gsl_spline_alloc(gsl_interp_cspline,quintessence.last_int);
-	  quintessence.acc_mg_field_p = gsl_interp_accel_alloc();
-	  quintessence.spline_mg_field_p = gsl_spline_alloc(gsl_interp_cspline,quintessence.last_int);
-
-		quintessence.acc_a = gsl_interp_accel_alloc();
-		quintessence.spline_a = gsl_spline_alloc(gsl_interp_cspline,quintessence.last_int);
-
+    quintessence.acc_H = gsl_interp_accel_alloc();
+    quintessence.spline_H = gsl_spline_alloc(gsl_interp_cspline,quintessence.last_int);
+    quintessence.acc_H_prime = gsl_interp_accel_alloc();
+    quintessence.spline_H_prime = gsl_spline_alloc(gsl_interp_cspline,quintessence.last_int);
+    quintessence.acc_w_mg = gsl_interp_accel_alloc();
+    quintessence.spline_w_mg = gsl_spline_alloc(gsl_interp_cspline,quintessence.last_int);
+    quintessence.acc_Omega_m = gsl_interp_accel_alloc();
+    quintessence.spline_Omega_m = gsl_spline_alloc(gsl_interp_cspline,quintessence.last_int);
+    quintessence.acc_Omega_rad = gsl_interp_accel_alloc();
+    quintessence.spline_Omega_rad = gsl_spline_alloc(gsl_interp_cspline,quintessence.last_int);
+    quintessence.acc_Omega_mg = gsl_interp_accel_alloc();
+    quintessence.spline_Omega_mg = gsl_spline_alloc(gsl_interp_cspline,quintessence.last_int);
+    quintessence.acc_particleHorizon = gsl_interp_accel_alloc();
+    quintessence.spline_particleHorizon = gsl_spline_alloc(gsl_interp_cspline,quintessence.last_int);
+    quintessence.acc_mg_field = gsl_interp_accel_alloc();
+    quintessence.spline_mg_field = gsl_spline_alloc(gsl_interp_cspline,quintessence.last_int);
+    quintessence.acc_mg_field_p = gsl_interp_accel_alloc();
+    quintessence.spline_mg_field_p = gsl_spline_alloc(gsl_interp_cspline,quintessence.last_int);
+    quintessence.acc_a = gsl_interp_accel_alloc();
+    quintessence.spline_a = gsl_spline_alloc(gsl_interp_cspline,quintessence.last_int);
 		// Initialization of interpolation structures
 		gsl_spline_init(quintessence.spline_H,quintessence.a,quintessence.H,quintessence.last_int);
 		gsl_spline_init(quintessence.spline_H_prime,quintessence.a,quintessence.H_prime,quintessence.last_int);
@@ -375,21 +389,12 @@ int main(int argc, char **argv)
 		gsl_spline_init(quintessence.spline_particleHorizon,quintessence.a,quintessence.particleHorizon,quintessence.last_int);
 	  gsl_spline_init(quintessence.spline_mg_field,quintessence.a,quintessence.mg_field,quintessence.last_int);
 	  gsl_spline_init(quintessence.spline_mg_field_p,quintessence.a,quintessence.mg_field_p,quintessence.last_int);
-
 		gsl_spline_init(quintessence.spline_a,quintessence.particleHorizon,quintessence.a,quintessence.last_int);
 		// Interpolation test
-
 		if(quintessence.mg_verbose>0)
 		{
 
 			double a_eval = 0.5;
-			//
-			// COUT << " Quintessence TEST : Interpolation test at a = " << a_eval <<endl;
-		  // COUT << " Quintessence TEST : Field = " << gsl_spline_eval(quintessence.spline_mg_field,a_eval,quintessence.acc_mg_field) << endl;
-		  // COUT << " Quintessence TEST : Field Velocity = " << gsl_spline_eval(quintessence.spline_mg_field_p,a_eval,quintessence.acc_mg_field_p) << endl;
-		  // COUT << " Quintessence TEST : H = " << gsl_spline_eval(quintessence.spline_H,a_eval,quintessence.acc_H) << endl;
-			// COUT << " Quintessence TEST : H_prime = " << gsl_spline_eval(quintessence.spline_H,a_eval,quintessence.acc_H_prime) << endl;
-
 			COUT << " Quintessence TEST: Hubble parameter at z_in: " << gsl_spline_eval(quintessence.spline_H,a,quintessence.acc_H) << " , while GR value " << Hconf(a, fourpiG, cosmo) << endl;
 			COUT << " Quintessence TEST: Hubble parameter derivative at z_in: " << gsl_spline_eval(quintessence.spline_H_prime,a,quintessence.acc_H_prime) << endl;
 			COUT << " Quintessence TEST: Omega_m at z_in: " << gsl_spline_eval(quintessence.spline_Omega_m,a,quintessence.acc_Omega_m) << " , while GR value " << Omega_m(a, cosmo) << endl;
@@ -398,9 +403,6 @@ int main(int argc, char **argv)
 			COUT << " Quintessence TEST: particle horizon at z_in: " << gsl_spline_eval(quintessence.spline_particleHorizon,a,quintessence.acc_particleHorizon) << " , while GR value " << tau << endl;
 			COUT << " Quintessence TEST: scalar field at z_in: " << gsl_spline_eval(quintessence.spline_mg_field,a,quintessence.acc_mg_field) << endl;
 			COUT << " Quintessence TEST: scalar field velocity at z_in: " << gsl_spline_eval(quintessence.spline_mg_field_p,a,quintessence.acc_mg_field_p) << endl;
-
-			//This function returns the index i of the array x_array such that x_array[i] <= x < x_array[i+1]
-		  // COUT << quintessence.last_int << " " << quintessence.particleHorizon[gsl_interp_bsearch(quintessence.a,a_eval,0,quintessence.last_int)] << endl;
 		}
 
 	}
@@ -409,6 +411,10 @@ int main(int argc, char **argv)
 		COUT << " Quintessence background ERROR: an error occurred while importing background data." << endl;
 		parallel.abortForce();
 	}
+
+  #endif
+  cout<<"I'm HERE3: "<<endl;
+
 
 	//Quintessence
 	double alpha = quintessence.mg_alpha;
