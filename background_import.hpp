@@ -56,7 +56,7 @@ bool mg_import(const double a_in, const double fourpiG, mg_cosmology * mg_cosmo,
             mg_cosmo->Omega_m_vec.push_back( stod(row[6]) + stod(row[7]) );
             mg_cosmo->Omega_rad_vec.push_back( stod(row[5]) );
             mg_cosmo->Omega_mg_vec.push_back( stod(row[4]) );
-            mg_cosmo->particleHorizon_vec.push_back( stod(row[9]) *2./3./ sqrt(fourpiG) );
+            mg_cosmo->particleHorizon_vec.push_back( stod(row[9]) * 2./3./ sqrt(fourpiG) );
             mg_cosmo->mg_field_vec.push_back( stod(row[10]) );
             mg_cosmo->mg_field_p_vec.push_back( stod(row[11]) * sqrt(2.*fourpiG/3.) );
 

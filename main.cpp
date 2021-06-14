@@ -332,26 +332,25 @@ int main(int argc, char **argv)
 	fourpiG = 1.5 * sim.boxsize * sim.boxsize / C_SPEED_OF_LIGHT / C_SPEED_OF_LIGHT;
 	a = 1. / (1. + sim.z_in);
 	tau = particleHorizon(a, fourpiG, cosmo);
-
-  cout<<"I'm HERE: "<<endl;
   #ifdef HAVE_CLASS_BG
   #ifdef HAVE_CLASS
   initializeCLASSstructures(sim, ic, cosmo, quintessence, class_background, class_thermo, class_perturbs, params, numparam);
-  cout<<"I'm HERE2: "<<endl;
-  loadBGFunctions(class_background, quintessence, quintessence.spline_H, quintessence.acc_H, "H [1/Mpc]", sim.z_in);
-  loadBGFunctions(class_background, quintessence, quintessence.spline_H_prime, quintessence.acc_H_prime, "H_prime", sim.z_in);
-  loadBGFunctions(class_background, quintessence, quintessence.spline_w_mg,quintessence.acc_w_mg,"w_mg",sim.z_in);
-  double a_eval = 0.5;
-  COUT << " Quintessence TEST: Hubble parameter at z_in: " << gsl_spline_eval(quintessence.spline_H,a,quintessence.acc_H) << " , while GR value " << Hconf(a, fourpiG, cosmo) << endl;
-
-
+  loadBGFunctions(class_background, quintessence, quintessence.spline_H, quintessence.acc_H, "H [1/Mpc]", sim.z_in, fourpiG);
+  loadBGFunctions(class_background, quintessence, quintessence.spline_H_prime, quintessence.acc_H_prime, "H_prime", sim.z_in, fourpiG);
+  loadBGFunctions(class_background, quintessence, quintessence.spline_w_mg,quintessence.acc_w_mg,"w_mg",sim.z_in, fourpiG);
+  loadBGFunctions(class_background, quintessence, quintessence.spline_Omega_m,quintessence.acc_Omega_m,"Omega_m",sim.z_in, fourpiG);
+  loadBGFunctions(class_background, quintessence, quintessence.spline_Omega_rad,quintessence.acc_Omega_rad,"Omega_rad",sim.z_in, fourpiG);
+  loadBGFunctions(class_background, quintessence, quintessence.spline_Omega_mg,quintessence.acc_Omega_mg,"Omega_mg",sim.z_in, fourpiG);
+  loadBGFunctions(class_background, quintessence, quintessence.spline_particleHorizon,quintessence.acc_particleHorizon,"conf. time [Mpc]",sim.z_in, fourpiG);
+  loadBGFunctions(class_background, quintessence, quintessence.spline_mg_field,quintessence.acc_mg_field,"phi_smg",sim.z_in, fourpiG);
+  loadBGFunctions(class_background, quintessence, quintessence.spline_mg_field_p,quintessence.acc_mg_field_p,"phi\'",sim.z_in, fourpiG);
+  loadBGFunctions(class_background, quintessence, quintessence.spline_a,quintessence.acc_a,"scale factor",sim.z_in, fourpiG);
   #else
   COUT << " Quintessence background from hiclass requested while CLASS is not defined: an error occurred while importing background data." << endl;
   parallel.abortForce();
   #endif
 
   #else
-
 	if( mg_import(a, fourpiG, &quintessence, quintessence.mg_bkg_file) ){
     // The import function should be in this position because it relies on fourpiG value to correctly normalize input values
     COUT << endl << " Reading quintessence background file." << endl;
@@ -390,31 +389,26 @@ int main(int argc, char **argv)
 	  gsl_spline_init(quintessence.spline_mg_field,quintessence.a,quintessence.mg_field,quintessence.last_int);
 	  gsl_spline_init(quintessence.spline_mg_field_p,quintessence.a,quintessence.mg_field_p,quintessence.last_int);
 		gsl_spline_init(quintessence.spline_a,quintessence.particleHorizon,quintessence.a,quintessence.last_int);
-		// Interpolation test
-		if(quintessence.mg_verbose>0)
-		{
-
-			double a_eval = 0.5;
-			COUT << " Quintessence TEST: Hubble parameter at z_in: " << gsl_spline_eval(quintessence.spline_H,a,quintessence.acc_H) << " , while GR value " << Hconf(a, fourpiG, cosmo) << endl;
-			COUT << " Quintessence TEST: Hubble parameter derivative at z_in: " << gsl_spline_eval(quintessence.spline_H_prime,a,quintessence.acc_H_prime) << endl;
-			COUT << " Quintessence TEST: Omega_m at z_in: " << gsl_spline_eval(quintessence.spline_Omega_m,a,quintessence.acc_Omega_m) << " , while GR value " << Omega_m(a, cosmo) << endl;
-			COUT << " Quintessence TEST: Omega_rad at z_in: " << gsl_spline_eval(quintessence.spline_Omega_rad,a,quintessence.acc_Omega_rad) << " , while GR value " << Omega_rad(a, cosmo) << endl;
-			COUT << " Quintessence TEST: Omega_Lambda at z_in: " << gsl_spline_eval(quintessence.spline_Omega_mg,a,quintessence.acc_Omega_mg) << " , while GR value " << Omega_Lambda(a, cosmo) << endl;
-			COUT << " Quintessence TEST: particle horizon at z_in: " << gsl_spline_eval(quintessence.spline_particleHorizon,a,quintessence.acc_particleHorizon) << " , while GR value " << tau << endl;
-			COUT << " Quintessence TEST: scalar field at z_in: " << gsl_spline_eval(quintessence.spline_mg_field,a,quintessence.acc_mg_field) << endl;
-			COUT << " Quintessence TEST: scalar field velocity at z_in: " << gsl_spline_eval(quintessence.spline_mg_field_p,a,quintessence.acc_mg_field_p) << endl;
-		}
-
 	}
 	// If the import function fails, interrupt the software
 	else{
 		COUT << " Quintessence background ERROR: an error occurred while importing background data." << endl;
 		parallel.abortForce();
 	}
-
   #endif
-  cout<<"I'm HERE3: "<<endl;
-
+  // Interpolation test
+  if(quintessence.mg_verbose>0)
+  {
+    double a_eval = 0.5;
+    COUT << " Quintessence TEST: Hubble parameter at z_in: " << gsl_spline_eval(quintessence.spline_H,a,quintessence.acc_H) << " , while GR value " << Hconf(a, fourpiG, cosmo) << endl;
+    COUT << " Quintessence TEST: Hubble parameter derivative at z_in: " << gsl_spline_eval(quintessence.spline_H_prime,a,quintessence.acc_H_prime) << endl;
+    COUT << " Quintessence TEST: Omega_m at z_in: " << gsl_spline_eval(quintessence.spline_Omega_m,a,quintessence.acc_Omega_m) << " , while GR value " << Omega_m(a, cosmo) << endl;
+    COUT << " Quintessence TEST: Omega_rad at z_in: " << gsl_spline_eval(quintessence.spline_Omega_rad,a,quintessence.acc_Omega_rad) << " , while GR value " << Omega_rad(a, cosmo) << endl;
+    COUT << " Quintessence TEST: Omega_Lambda at z_in: " << gsl_spline_eval(quintessence.spline_Omega_mg,a,quintessence.acc_Omega_mg) << " , while GR value " << Omega_Lambda(a, cosmo) << endl;
+    COUT << " Quintessence TEST: particle horizon at z_in: " << gsl_spline_eval(quintessence.spline_particleHorizon,a,quintessence.acc_particleHorizon) << " , while GR value " << tau << endl;
+    COUT << " Quintessence TEST: scalar field at z_in: " << gsl_spline_eval(quintessence.spline_mg_field,a,quintessence.acc_mg_field) << endl;
+    COUT << " Quintessence TEST: scalar field velocity at z_in: " << gsl_spline_eval(quintessence.spline_mg_field_p,a,quintessence.acc_mg_field_p) << endl;
+  }
 
 	//Quintessence
 	double alpha = quintessence.mg_alpha;
