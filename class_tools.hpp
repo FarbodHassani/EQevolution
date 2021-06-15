@@ -583,11 +583,13 @@ void loadBGFunctions(background & class_background, mg_cosmology & quintessence,
   int bg_size=0;
   int num_points=30;
   double dz=0.005/num_points;
+  double dtau = 70.0/num_points;
   double z1,z2;
 
 	background_output_titles(&class_background, coltitles);
   sprintf(zname, "z");
 	ptr = strtok(coltitles, _DELIMITER_);
+  cout<<"qname: "<<qname<<endl;
 	while (ptr != NULL)
 	{
     if (strncmp(qname,"H_prime",strlen("H_prime")) == 0)
@@ -619,6 +621,11 @@ void loadBGFunctions(background & class_background, mg_cosmology & quintessence,
     {
       if (strncmp(ptr, "(.)rho_smg", strlen("(.)rho_smg")) == 0) bgcol = cols;
       else if (strncmp(ptr, "(.)rho_tot", strlen("(.)rho_tot")) == 0) bgcol2 = cols;
+      else if (strncmp(ptr, zname, strlen(zname)) == 0) zcol = cols;
+    }
+    else if (strncmp(qname,"conf. time [Mpc]",strlen("conf. time [Mpc]")) == 0 || strncmp(qname,"scale factor",strlen("scale factor")) == 0)
+    {
+      if (strncmp(ptr, "conf. time [Mpc]", strlen("conf. time [Mpc]")) == 0) bgcol = cols;
       else if (strncmp(ptr, zname, strlen(zname)) == 0) zcol = cols;
     }
     // Todo: Think about ncdm/ rho_ur part!
@@ -689,6 +696,7 @@ void loadBGFunctions(background & class_background, mg_cosmology & quintessence,
     else if (strncmp(qname,"conf. time [Mpc]",strlen("conf. time [Mpc]")) == 0 || strncmp(qname,"scale factor",strlen("scale factor")) == 0)
     {
       bg[i-bg_size] *=  2./3./ sqrt(fourpiG);
+      cout<<" a:"<<a[i-bg_size]<<" X: "<< bg[i-bg_size]<<endl;
     }
     else if (strncmp(qname,"phi_smg",strlen("phi_smg")) == 0)
     {
@@ -709,6 +717,16 @@ void loadBGFunctions(background & class_background, mg_cosmology & quintessence,
       }
   }
 
+if ( strncmp(qname,"scale factor",strlen("scale factor")) == 0)
+{
+  for (int i=0;i<num_points;i++)
+  {
+    bg[class_background.bt_size-bg_size+i] =  bg[class_background.bt_size-bg_size+i-1] + dtau;
+    a[class_background.bt_size-bg_size+i] = a[class_background.bt_size-bg_size+i-1] - dtau * (a[class_background.bt_size-bg_size+i-1] -  a[class_background.bt_size-bg_size+i-2])/(bg[class_background.bt_size-bg_size+i-1] - bg[class_background.bt_size-bg_size+i-2]);
+  }
+}
+else
+{
   for (int i=0;i<num_points;i++)
   {
     z1 = 1./a[class_background.bt_size-bg_size+i-1] -1.;
@@ -716,6 +734,8 @@ void loadBGFunctions(background & class_background, mg_cosmology & quintessence,
     a[class_background.bt_size-bg_size+i] =  a[class_background.bt_size-bg_size+i-1] + 1./(1.+dz);
     bg[class_background.bt_size-bg_size+i] = bg[class_background.bt_size-bg_size+i-1] - dz *(bg[class_background.bt_size-bg_size+i-1] -  bg[class_background.bt_size-bg_size+i-2])/(z1 - z2);
   }
+}
+
 
 	free(data);
 	bg_data = gsl_spline_alloc(gsl_interp_cspline, class_background.bt_size-bg_size+num_points);
