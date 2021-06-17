@@ -399,15 +399,15 @@ int main(int argc, char **argv)
   // Interpolation test
   if(quintessence.mg_verbose>0)
   {
-    double a_eval = 0.5;
-    COUT << " Quintessence TEST: Hubble parameter at z_in: " << gsl_spline_eval(quintessence.spline_H,a,quintessence.acc_H) << " , while GR value " << Hconf(a, fourpiG, cosmo) << endl;
-    COUT << " Quintessence TEST: Hubble parameter derivative at z_in: " << gsl_spline_eval(quintessence.spline_H_prime,a,quintessence.acc_H_prime) << endl;
-    COUT << " Quintessence TEST: Omega_m at z_in: " << gsl_spline_eval(quintessence.spline_Omega_m,a,quintessence.acc_Omega_m) << " , while GR value " << Omega_m(a, cosmo) << endl;
-    COUT << " Quintessence TEST: Omega_rad at z_in: " << gsl_spline_eval(quintessence.spline_Omega_rad,a,quintessence.acc_Omega_rad) << " , while GR value " << Omega_rad(a, cosmo) << endl;
-    COUT << " Quintessence TEST: Omega_Lambda at z_in: " << gsl_spline_eval(quintessence.spline_Omega_mg,a,quintessence.acc_Omega_mg) << " , while GR value " << Omega_Lambda(a, cosmo) << endl;
-    COUT << " Quintessence TEST: particle horizon at z_in: " << gsl_spline_eval(quintessence.spline_particleHorizon,a,quintessence.acc_particleHorizon) << " , while GR value " << tau << endl;
-    COUT << " Quintessence TEST: scalar field at z_in: " << gsl_spline_eval(quintessence.spline_mg_field,a,quintessence.acc_mg_field) << endl;
-    COUT << " Quintessence TEST: scalar field velocity at z_in: " << gsl_spline_eval(quintessence.spline_mg_field_p,a,quintessence.acc_mg_field_p) << endl;
+    double a_eval = 1./(1+50);
+    COUT << " Quintessence TEST: Hubble parameter at z_in: " << gsl_spline_eval(quintessence.spline_H,a_eval,quintessence.acc_H) << " , while GR value " << Hconf(a_eval, fourpiG, cosmo) << endl;
+    COUT << " Quintessence TEST: Hubble parameter derivative at z_in: " << gsl_spline_eval(quintessence.spline_H_prime,a_eval,quintessence.acc_H_prime) << endl;
+    COUT << " Quintessence TEST: Omega_m at z_in: " << gsl_spline_eval(quintessence.spline_Omega_m,a_eval,quintessence.acc_Omega_m) << " , while GR value " << Omega_m(a_eval, cosmo) << endl;
+    COUT << " Quintessence TEST: Omega_rad at z_in: " << gsl_spline_eval(quintessence.spline_Omega_rad,a_eval,quintessence.acc_Omega_rad) << " , while GR value " << Omega_rad(a_eval, cosmo) << endl;
+    COUT << " Quintessence TEST: Omega_Lambda at z_in: " << gsl_spline_eval(quintessence.spline_Omega_mg,a_eval,quintessence.acc_Omega_mg) << " , while GR value " << Omega_Lambda(a_eval, cosmo) << endl;
+    COUT << " Quintessence TEST: particle horizon at z_in: " << gsl_spline_eval(quintessence.spline_particleHorizon, a_eval,quintessence.acc_particleHorizon) << " , while GR value " << particleHorizon(a_eval, fourpiG, cosmo) << endl;
+    COUT << " Quintessence TEST: scalar field at z_in: " << gsl_spline_eval(quintessence.spline_mg_field,a_eval,quintessence.acc_mg_field) << endl;
+    COUT << " Quintessence TEST: scalar field velocity at z_in: " << gsl_spline_eval(quintessence.spline_mg_field_p,a_eval,quintessence.acc_mg_field_p) << endl;
   }
 
 	//Quintessence
@@ -515,7 +515,7 @@ int main(int argc, char **argv)
 	if (numparam > 0) free(params);
 #endif
 
-	while (true)    // main loop
+	while (false)    // main loop
 	{
     for (x.first(); x.test(); x.next())
     {

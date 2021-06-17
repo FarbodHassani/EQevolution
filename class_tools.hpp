@@ -573,7 +573,7 @@ void loadTransferFunctions(background & class_background, perturbs & class_pertu
 // Todo: check the extrapolation and see if we have many points in the extrapolation do we get a better results as 3d order spline tries to fit a 3d order equations.
 void loadBGFunctions(background & class_background, mg_cosmology & quintessence, gsl_spline * & bg_data, gsl_interp_accel * & bg_data_accelator, const char * qname, double z_in, double fourpiG)
 {
-	int cols = 0, bgcol = -1, zcol = -1, bgcol2 = -1, bgcol3 = -1;
+	int cols = 0, bgcol = -1, zcol = -1, bgcol2 = -1, bgcol3 = -1, Hcol = -1;
 	double * a;
 	double * bg;
 	double * data;
@@ -589,19 +589,25 @@ void loadBGFunctions(background & class_background, mg_cosmology & quintessence,
 	background_output_titles(&class_background, coltitles);
   sprintf(zname, "z");
 	ptr = strtok(coltitles, _DELIMITER_);
-  cout<<"qname: "<<qname<<endl;
 	while (ptr != NULL)
 	{
     if (strncmp(qname,"H_prime",strlen("H_prime")) == 0)
     {
       if (strncmp(ptr, "(.)rho_tot", strlen("(.)rho_tot")) == 0) bgcol = cols;
       else if (strncmp(ptr, "(.)p_tot", strlen("(.)p_tot")) == 0) bgcol2 = cols;
+      else if (strncmp(ptr,"H [1/Mpc]", strlen("H [1/Mpc]")) == 0) Hcol = cols;
       else if (strncmp(ptr, zname, strlen(zname)) == 0) zcol = cols;
     }
     else if (strncmp(qname,"w_mg",strlen("w_mg")) == 0)
     {
       if (strncmp(ptr, "(.)rho_smg", strlen("(.)rho_smg")) == 0) bgcol = cols;
       else if (strncmp(ptr, "(.)p_smg", strlen("(.)p_smg")) == 0) bgcol2 = cols;
+      else if (strncmp(ptr, zname, strlen(zname)) == 0) zcol = cols;
+    }
+    else if (strncmp(qname,"Omega_mg",strlen("Omega_mg")) == 0)
+    {
+      if (strncmp(ptr, "(.)rho_smg", strlen("(.)rho_smg")) == 0) bgcol = cols;
+      else if (strncmp(ptr, "(.)rho_tot", strlen("(.)rho_tot")) == 0) bgcol2 = cols;
       else if (strncmp(ptr, zname, strlen(zname)) == 0) zcol = cols;
     }
     else if (strncmp(qname,"Omega_m",strlen("Omega_m")) == 0)
@@ -617,15 +623,10 @@ void loadBGFunctions(background & class_background, mg_cosmology & quintessence,
       else if (strncmp(ptr, "(.)rho_tot", strlen("(.)rho_tot")) == 0) bgcol2 = cols;
       else if (strncmp(ptr, zname, strlen(zname)) == 0) zcol = cols;
     }
-    else if (strncmp(qname,"Omega_mg",strlen("Omega_mg")) == 0)
-    {
-      if (strncmp(ptr, "(.)rho_smg", strlen("(.)rho_smg")) == 0) bgcol = cols;
-      else if (strncmp(ptr, "(.)rho_tot", strlen("(.)rho_tot")) == 0) bgcol2 = cols;
-      else if (strncmp(ptr, zname, strlen(zname)) == 0) zcol = cols;
-    }
     else if (strncmp(qname,"conf. time [Mpc]",strlen("conf. time [Mpc]")) == 0 || strncmp(qname,"scale factor",strlen("scale factor")) == 0)
     {
       if (strncmp(ptr, "conf. time [Mpc]", strlen("conf. time [Mpc]")) == 0) bgcol = cols;
+      else if (strncmp(ptr,"H [1/Mpc]", strlen("H [1/Mpc]")) == 0) Hcol = cols;
       else if (strncmp(ptr, zname, strlen(zname)) == 0) zcol = cols;
     }
     // Todo: Think about ncdm/ rho_ur part!
@@ -667,11 +668,15 @@ void loadBGFunctions(background & class_background, mg_cosmology & quintessence,
 		a[i-bg_size] = 1./(1. + data[i*cols + zcol]);
     if (strncmp(qname,"H_prime",strlen("H_prime")) == 0)
     {
-      bg[i-bg_size] = -(3.0/2.0) * a[i-bg_size] *  (data[i*cols + bgcol] + data[i*cols + bgcol2]) * sqrt(2.*fourpiG/3.) * sqrt(2.*fourpiG/3.);
+      bg[i-bg_size] = -(3.0/2.0) * a[i-bg_size] *  (data[i*cols + bgcol] + data[i*cols + bgcol2]) * sqrt(2.*fourpiG/3.) * sqrt(2.*fourpiG/3.)/data[(class_background.bt_size-1)*cols + Hcol]/data[(class_background.bt_size-1)*cols + Hcol];
     }
     else if (strncmp(qname,"w_mg",strlen("w_mg")) == 0)
     {
       bg[i-bg_size] = data[i*cols + bgcol2]/data[i*cols + bgcol];
+    }
+    else if (strncmp(qname,"Omega_mg",strlen("Omega_mg")) == 0)
+    {
+      bg[i-bg_size] = data[i*cols + bgcol]/data[i*cols + bgcol2];
     }
     else if (strncmp(qname,"Omega_m",strlen("Omega_m")) == 0)
     {
@@ -681,22 +686,17 @@ void loadBGFunctions(background & class_background, mg_cosmology & quintessence,
     {
       bg[i-bg_size] = data[i*cols + bgcol]/data[i*cols + bgcol2];
     }
-    else if (strncmp(qname,"Omega_mg",strlen("Omega_mg")) == 0)
-    {
-      bg[i-bg_size] = data[i*cols + bgcol]/data[i*cols + bgcol2];
-    }
    else
 		{
         bg[i-bg_size] = data[i*cols + bgcol];
     }
     if (strncmp(qname,"H [1/Mpc]",strlen("H [1/Mpc]")) == 0)
     {
-      bg[i-bg_size] *= sqrt(2.*fourpiG/3.);
+      bg[i-bg_size] *= (sqrt(2.*fourpiG/3.))* a[i-bg_size]/ data[(class_background.bt_size-1)*cols + bgcol];
     }
     else if (strncmp(qname,"conf. time [Mpc]",strlen("conf. time [Mpc]")) == 0 || strncmp(qname,"scale factor",strlen("scale factor")) == 0)
     {
-      bg[i-bg_size] *=  2./3./ sqrt(fourpiG);
-      cout<<" a:"<<a[i-bg_size]<<" X: "<< bg[i-bg_size]<<endl;
+      bg[i-bg_size] *=  2./3./ sqrt(fourpiG) * data[(class_background.bt_size-1)*cols + Hcol];
     }
     else if (strncmp(qname,"phi_smg",strlen("phi_smg")) == 0)
     {
