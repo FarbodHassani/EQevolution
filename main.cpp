@@ -515,7 +515,7 @@ int main(int argc, char **argv)
 	if (numparam > 0) free(params);
 #endif
 
-	while (false)    // main loop
+	while (true)    // main loop
 	{
     for (x.first(); x.test(); x.next())
     {

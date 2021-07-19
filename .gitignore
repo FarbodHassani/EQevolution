@@ -15,3 +15,9 @@ output/lcdm_pk001_pi.dat
 output/lcdm_pk001_V_pi.dat
 output/quintessence_background.dat
 output/quintessence_settings_used.ini
+output/lcdm_pk002_B.dat
+output/lcdm_pk002_chi.dat
+output/lcdm_pk002_hij.dat
+output/lcdm_pk002_phi.dat
+output/lcdm_pk002_pi.dat
+output/lcdm_pk002_V_pi.dat
