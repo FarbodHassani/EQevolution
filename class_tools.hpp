@@ -110,10 +110,12 @@ void initializeCLASSstructures(metadata & sim, icsettings & ic, cosmology & cosm
 	sprintf(class_filecontent.value[i++], "%f", ic.n_s);
 
 	sprintf(class_filecontent.name[i], "z_pk");
-	if (ic.z_ic > sim.z_in)
-		sprintf(class_filecontent.value[i++], "%f, %f, 0", 1.015 * ic.z_ic + 0.01, sim.z_in);
-	else
-		sprintf(class_filecontent.value[i++], "%f, 0", 1.015 * ic.z_ic + 0.01);
+  sprintf(class_filecontent.value[i++], "100.0");
+
+	// if (ic.z_ic > sim.z_in)
+	// 	sprintf(class_filecontent.value[i++], "%f, %f, 0", 1.015 * ic.z_ic + 0.01, sim.z_in);
+	// else
+	// 	sprintf(class_filecontent.value[i++], "%f, 0", 1.015 * ic.z_ic + 0.01);
 
 	sprintf(class_filecontent.name[i], "output");
 	sprintf(class_filecontent.value[i++], "%s", output_value);
@@ -181,7 +183,7 @@ void initializeCLASSstructures(metadata & sim, icsettings & ic, cosmology & cosm
   sprintf(class_filecontent.value[i++], "quintessence_extended");
   //
   sprintf(class_filecontent.name[i], "parameters_smg");
-  sprintf(class_filecontent.value[i++],"%e, %e, %e, %e, %e",-quintessence.mg_sigma, quintessence.mg_Lambda, quintessence.mg_alpha, 1e-10, 1e-21);
+  sprintf(class_filecontent.value[i++],"%e, %e, %e, %e, %e",quintessence.mg_sigma, quintessence.mg_Lambda, quintessence.mg_alpha, quintessence.ic_vx, quintessence.ic_vx_p);
 
   sprintf(class_filecontent.name[i], "tuning_dxdy_guess_smg");
   sprintf(class_filecontent.value[i++], "%d", 1);
@@ -419,8 +421,8 @@ void loadTransferFunctions(background & class_background, perturbs & class_pertu
 	double * tk_t;
 	double * data;
 	char coltitles[_MAXTITLESTRINGLENGTH_] = {0};
-	char dname[16];
-	char tname[16];
+	char dname[32];
+	char tname[32];
 	char kname[8];
 	char * ptr;
   double a = 1./(1.+z);
@@ -487,6 +489,7 @@ void loadTransferFunctions(background & class_background, perturbs & class_pertu
 	{
 		k[i] = data[i*cols + kcol] * boxsize;
 		tk_d[i] = data[i*cols + dcol];
+
     if (strncmp(qname,"cdm",strlen("cdm")) != 0)
     {
 		  tk_t[i] = data[i*cols + tcol] / h;

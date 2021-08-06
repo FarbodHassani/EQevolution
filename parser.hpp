@@ -1634,7 +1634,10 @@ int parseMetadata(parameter * & params, const int numparam, metadata & sim, cosm
 		quintessence.mg_Lambda = 0.;
 	if (!parseParameter(params, numparam, "quintessence sigma", quintessence.mg_sigma))
 		quintessence.mg_sigma = 0.;
-
+  if (!parseParameter(params, numparam, "quintessence ic_vx", quintessence.ic_vx))
+		quintessence.ic_vx = 1.0;
+  if (!parseParameter(params, numparam, "quintessence ic_vx_p", quintessence.ic_vx_p))
+    quintessence.ic_vx_p = 1.e-20;
   if (!parseParameter(params, numparam, "quinessence non-linear steps",  sim.nq_numsteps))
   	sim.nq_numsteps = 1;
 

@@ -344,6 +344,7 @@ int main(int argc, char **argv)
   loadBGFunctions(class_background, quintessence, quintessence.spline_particleHorizon,quintessence.acc_particleHorizon,"conf. time [Mpc]",sim.z_in, fourpiG);
   loadBGFunctions(class_background, quintessence, quintessence.spline_mg_field,quintessence.acc_mg_field,"phi_smg",sim.z_in, fourpiG);
   loadBGFunctions(class_background, quintessence, quintessence.spline_mg_field_p,quintessence.acc_mg_field_p,"phi\'",sim.z_in, fourpiG);
+  loadBGFunctions(class_background, quintessence, quintessence.spline_mg_field_pp,quintessence.acc_mg_field_pp,"phi\'\'",sim.z_in, fourpiG);
   loadBGFunctions(class_background, quintessence, quintessence.spline_a,quintessence.acc_a,"scale factor",sim.z_in, fourpiG);
   #else
   COUT << " Quintessence background from hiclass requested while CLASS is not defined: an error occurred while importing background data." << endl;

@@ -302,7 +302,8 @@ struct mg_cosmology
 	double mg_alpha;
   double mg_Lambda;
   double mg_sigma;
-
+  double ic_vx;
+  double ic_vx_p;
   // Vector of background values to be filled with mg_import function
   std::vector<double> a_vec;
   std::vector<double> H_vec;
@@ -347,6 +348,8 @@ struct mg_cosmology
   gsl_spline * spline_mg_field;
   gsl_interp_accel * acc_mg_field_p;
   gsl_spline * spline_mg_field_p;
+  gsl_interp_accel * acc_mg_field_pp;
+  gsl_spline * spline_mg_field_pp;
   gsl_interp_accel * acc_particleHorizon;
   gsl_spline * spline_particleHorizon;
 
