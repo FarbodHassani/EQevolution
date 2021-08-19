@@ -503,6 +503,7 @@ void loadTransferFunctions(background & class_background, perturbs & class_pertu
       alpha = (data[i*cols + h_primecol] + 6.0*data[i*cols + eta_primecol])/(2.0*data[i*cols + kcol]*data[i*cols + kcol]);
       alpha_prime =data[i*cols + psicol] + data[i*cols + phicol] - data[i*cols + etacol];
       tk_d[i] += alpha ;
+      tk_t[i] = data[i*cols + tcol];
       tk_t[i] += alpha_prime ;
      }
     else if (qname != NULL)
