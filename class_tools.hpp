@@ -633,16 +633,30 @@ void loadBGFunctions(background & class_background, mg_cosmology & quintessence,
       else if (strncmp(ptr,"H [1/Mpc]", strlen("H [1/Mpc]")) == 0) Hcol = cols;
       else if (strncmp(ptr, zname, strlen(zname)) == 0) zcol = cols;
     }
+    else if (strncmp(qname,"phi\'\'",strlen("phi\'\'")) == 0)
+    {
+      if (strncmp(ptr, "phi\'\'", strlen("phi\'\'")) == 0) bgcol = cols;
+      else if (strncmp(ptr, "phi\'", strlen("phi\'")) ==0) bgcol2 = cols;
+      else if (strncmp(ptr, zname, strlen(zname)) == 0) zcol = cols;
+      // if(bgcol2==bgcol)
+    }
     // Todo: Think about ncdm/ rho_ur part!
 
     else
     {
       if (strncmp(ptr, qname, strlen(qname)) == 0) bgcol = cols;
       else if (strncmp(ptr, zname, strlen(zname)) == 0) zcol = cols;
+      // if (strncmp(ptr, "phi\'\'", strlen("phi\'\'")) == 0) bgcol = cols;
+      // if (strncmp(ptr, "phi\'", strlen("phi\'")) == 0) bgcol = cols;
     }
 		cols++;
     ptr = strtok(NULL, _DELIMITER_);
     }
+    if (strncmp(qname,"phi\'",strlen("phi\'")) == 0 && bgcol2<0)
+    {
+      bgcol = bgcol-1;
+    }
+
 	if (zcol < 0 || bgcol < 0 || ((strncmp(qname,"H_prime",strlen("H_prime")) == 0) && bgcol2 < 0) || ((strncmp(qname,"w_mg",strlen("w_mg")) == 0) && bgcol2 < 0) || ((strncmp(qname,"Omega_m",strlen("Omega_m")) == 0) && bgcol2 < 0 && bgcol3 < 0) || ((strncmp(qname,"Omega_rad",strlen("Omega_rad")) == 0) && bgcol2 < 0) || ((strncmp(qname,"Omega_mg",strlen("Omega_mg")) == 0) && bgcol2 < 0))
 	{
 		COUT << " error in loadBGFunctions (HAVE_CLASS_BG)! Unable to identify requested columns!" << endl;

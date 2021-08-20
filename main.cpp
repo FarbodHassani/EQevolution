@@ -417,9 +417,9 @@ int main(int argc, char **argv)
 	double sigma = quintessence.mg_sigma;
   double mg_field = gsl_spline_eval(quintessence.spline_mg_field, a, quintessence.acc_mg_field);
   double mg_field_prime = gsl_spline_eval(quintessence.spline_mg_field_p, a, quintessence.acc_mg_field_p);
+  double mg_field_prime_prime = gsl_spline_eval(quintessence.spline_mg_field_pp, a, quintessence.acc_mg_field_pp);
 	double Hconf_quintessence = gsl_spline_eval(quintessence.spline_H,a,quintessence.acc_H);
 	double Hconf_prime_quintessence = gsl_spline_eval(quintessence.spline_H_prime,a,quintessence.acc_H_prime);
-  double mg_field_prime_prime;
 
 	COUT << " Extended Quintessence called with parameters:" << endl;
 	COUT << "\t - alpha: " << alpha << endl;
@@ -516,6 +516,9 @@ int main(int argc, char **argv)
 	if (numparam > 0) free(params);
 #endif
 
+  sprintf(filename, "%s%s_background.dat", sim.output_path, sim.basename_generic);
+  outfile = fopen(filename, "w+");
+  fclose(outfile);
 	while (true)    // main loop
 	{
     for (x.first(); x.test(); x.next())
@@ -684,7 +687,6 @@ int main(int argc, char **argv)
 		// record some background data
 		if (kFT.setCoord(0, 0, 0))
 		{
-			sprintf(filename, "%s%s_background.dat", sim.output_path, sim.basename_generic);
 			outfile = fopen(filename, "a");
 			if (outfile == NULL)
 			{
@@ -694,7 +696,7 @@ int main(int argc, char **argv)
 			{
 				if (cycle == 0)
 					fprintf(outfile, "# background statistics\n# cycle   tau/boxsize    a             conformal H/H0   scalar(phi)   scalar_p    scalar_pp    phi(k=0)       T00(k=0)\n");
-				fprintf(outfile, " %6d   %e   %e   %e   %e   %e   %e   %e   %e\n", cycle, tau, a, Hconf_quintessence / gsl_spline_eval(quintessence.spline_H, 1., quintessence.acc_H), mg_field, mg_field_prime, mg_field_bk_pp_rk4(a, fourpiG, cosmo, Hconf_quintessence*a, mg_field, mg_field_prime, quintessence.mg_alpha, quintessence.mg_Lambda, quintessence.mg_sigma), scalarFT(kFT).real(), T00hom);
+				fprintf(outfile, " %6d   %e   %e   %e   %e   %e   %e   %e   %e\n", cycle, tau, a, Hconf_quintessence / gsl_spline_eval(quintessence.spline_H, 1., quintessence.acc_H), mg_field, mg_field_prime, mg_field_prime_prime, scalarFT(kFT).real(), T00hom);
 				fclose(outfile);
 			}
 		}
@@ -1018,6 +1020,7 @@ int main(int argc, char **argv)
 
 		mg_field = gsl_spline_eval(quintessence.spline_mg_field,a,quintessence.acc_mg_field);
 		mg_field_prime = gsl_spline_eval(quintessence.spline_mg_field_p,a,quintessence.acc_mg_field_p);
+    mg_field_prime_prime = gsl_spline_eval(quintessence.spline_mg_field_pp,a,quintessence.acc_mg_field_pp);
 		Hconf_quintessence = gsl_spline_eval(quintessence.spline_H,a,quintessence.acc_H);
 		Hconf_prime_quintessence = gsl_spline_eval(quintessence.spline_H_prime,a,quintessence.acc_H_prime);
 		// rungekutta4bg(a, fourpiG, cosmo, 0.5 * dtau);  // evolve background by half a time step
@@ -1047,6 +1050,7 @@ int main(int argc, char **argv)
 
 		mg_field = gsl_spline_eval(quintessence.spline_mg_field,a,quintessence.acc_mg_field);
 		mg_field_prime = gsl_spline_eval(quintessence.spline_mg_field_p,a,quintessence.acc_mg_field_p);
+    mg_field_prime_prime = gsl_spline_eval(quintessence.spline_mg_field_pp,a,quintessence.acc_mg_field_pp);
 		Hconf_quintessence = gsl_spline_eval(quintessence.spline_H,a,quintessence.acc_H);
 		Hconf_prime_quintessence = gsl_spline_eval(quintessence.spline_H_prime,a,quintessence.acc_H_prime);
 		// rungekutta4bg(a, fourpiG, cosmo, 0.5 * dtau);  // evolve background by half a time step
