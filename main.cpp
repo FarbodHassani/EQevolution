@@ -634,7 +634,7 @@ int main(int argc, char **argv)
 			if (dtau_old > 0.)
 			{
 				prepareFTsource<Real>(phi, chi, source, cosmo.Omega_cdm + cosmo.Omega_b + bg_ncdm(a, cosmo), source, 3. * Hconf(a, fourpiG, cosmo) * dx * dx / dtau_old, fourpiG * dx * dx / a, 3. * Hconf(a, fourpiG, cosmo) * Hconf(a, fourpiG, cosmo) * dx * dx);  // prepare nonlinear source for phi update
-        //prepareFTsource_Quintessence(phi, chi, source, cosmo.Omega_cdm + cosmo.Omega_b + bg_ncdm(a, cosmo), source, pi, V_pi, mg_field, mg_field_prime, alpha, Lambda, sigma, Hconf_quintessence, fourpiG, a, dx, dtau_old); // prepare nonlinear source for phi update using extended quintessence expressions
+        // prepareFTsource_Quintessence(phi, chi, source, cosmo.Omega_cdm + cosmo.Omega_b + bg_ncdm(a, cosmo), source, pi, V_pi, mg_field, mg_field_prime, alpha, Lambda, sigma, Hconf_quintessence, fourpiG, a, dx, dtau_old); // prepare nonlinear source for phi update using extended quintessence expressions
 
 #ifdef BENCHMARK
 				ref2_time= MPI_Wtime();

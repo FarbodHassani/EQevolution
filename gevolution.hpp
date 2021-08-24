@@ -365,7 +365,7 @@ void prepareFTsource_Quintessence(Field<FieldType> & phi, Field<FieldType> & Tij
     Sij(x, 0, 0) += .25 * (f_prime_varphi / beta_coeff) * (phi(x+0) - phi(x-0)) * (pi(x+0) - pi(x-0)) / dx / dx;
     Sij(x, 0, 0) += .25 * ((2.*fourpiG + f_ddprime_varphi)/beta_coeff) * (pi(x+0) - pi(x-0)) * (pi(x+0) - pi(x-0)) / dx / dx;
     Sij(x, 0, 0) += ((f_prime_varphi + f_ddprime_varphi)/beta_coeff) * (pi(x-0) + pi(x+0) - 2. * pi(x)) / dx / dx;
-    Sij(x, 0, 0) * = dx * dx;
+    Sij(x, 0, 0) *= (dx * dx);
 #endif
 #endif
 
@@ -378,7 +378,7 @@ void prepareFTsource_Quintessence(Field<FieldType> & phi, Field<FieldType> & Tij
     Sij(x, 1, 1) += .25 * (f_prime_varphi / beta_coeff) * (phi(x+1) - phi(x-1)) * (pi(x+1) - pi(x-1)) / dx / dx;
     Sij(x, 1, 1) += .25 * ((2.*fourpiG + f_ddprime_varphi)/beta_coeff) * (pi(x+1) - pi(x-1)) * (pi(x+1) - pi(x-1)) / dx / dx;
     Sij(x, 1, 1) += ((f_prime_varphi + f_ddprime_varphi)/beta_coeff) * (pi(x-1) + pi(x+1) - 2. * pi(x)) / dx / dx;
-    Sij(x, 1, 1) * = dx * dx;
+    Sij(x, 1, 1) *= dx * dx;
 #endif
 #endif
 
@@ -391,7 +391,7 @@ void prepareFTsource_Quintessence(Field<FieldType> & phi, Field<FieldType> & Tij
     Sij(x, 2, 2) += .25 * (f_prime_varphi / beta_coeff) * (phi(x+2) - phi(x-2)) * (pi(x+2) - pi(x-2)) / dx / dx;
     Sij(x, 2, 2) += .25 * ((2.*fourpiG + f_ddprime_varphi)/beta_coeff) * (pi(x+2) - pi(x-2)) * (pi(x+2) - pi(x-2)) / dx / dx;
     Sij(x, 2, 2) += ((f_prime_varphi + f_ddprime_varphi)/beta_coeff) * (pi(x-2) + pi(x+2) - 2. * pi(x)) / dx / dx;
-    Sij(x, 2, 2) * = dx * dx;
+    Sij(x, 2, 2) *= dx * dx;
 #endif
 #endif
 
@@ -407,7 +407,7 @@ void prepareFTsource_Quintessence(Field<FieldType> & phi, Field<FieldType> & Tij
     Sij(x, 0, 1) +=  (f_prime_varphi/beta_coeff) * (phi(x+0+1) - phi(x+1) + phi(x+0) - phi(x)) * (pi(x+0+1) - pi(x+0) + pi(x+1) - pi(x)) / (2. * dx) / (2. * dx);
     Sij(x, 0, 1) +=  ((2.*fourpiG + f_ddprime_varphi)/beta_coeff) * (pi(x+0+1) - pi(x+1) + pi(x+0) - pi(x)) * (pi(x+0+1) - pi(x+0) + pi(x+1) - pi(x)) / (2. * dx) / (2. * dx);
     Sij(x, 0, 1) +=  ((f_prime_varphi + f_ddprime_varphi)/beta_coeff) * (pi(x+0+1) - pi(x+1) - pi(x+0) + pi(x)) / dx / dx;
-    Sij(x, 0, 1) * = dx * dx;
+    Sij(x, 0, 1) *= dx * dx;
 #endif
 #endif
 
@@ -423,7 +423,7 @@ void prepareFTsource_Quintessence(Field<FieldType> & phi, Field<FieldType> & Tij
     Sij(x, 0, 2) +=  (f_prime_varphi/beta_coeff) * (phi(x+0+2) - phi(x+2) + phi(x+0) - phi(x)) * (pi(x+0+2) - pi(x+0) + pi(x+2) - pi(x)) / (2. * dx) / (2. * dx);
     Sij(x, 0, 2) +=  ((2.*fourpiG + f_ddprime_varphi)/beta_coeff) * (pi(x+0+2) - pi(x+2) + pi(x+0) - pi(x)) * (pi(x+0+2) - pi(x+0) + pi(x+2) - pi(x)) / (2. * dx) / (2. * dx);
     Sij(x, 0, 2) +=  ((f_prime_varphi + f_ddprime_varphi)/beta_coeff) * (pi(x+0+2) - pi(x+2) - pi(x+0) + pi(x)) / dx / dx;
-    Sij(x, 0, 2) * = dx * dx;
+    Sij(x, 0, 2) *= dx * dx;
 #endif
 #endif
 
@@ -440,7 +440,7 @@ void prepareFTsource_Quintessence(Field<FieldType> & phi, Field<FieldType> & Tij
   Sij(x, 1, 2) +=  ((2.*fourpiG + f_ddprime_varphi)/beta_coeff) * (pi(x+1+2) - pi(x+2) + pi(x+1) - pi(x)) * (pi(x+1+2) - pi(x+1) + pi(x+2) - pi(x)) / (2. * dx) / (2. * dx);
   Sij(x, 1, 2) +=  ((f_prime_varphi + f_ddprime_varphi)/beta_coeff) * (pi(x+1+2) - pi(x+2) - pi(x+1) + pi(x)) / dx / dx;
 
-  Sij(x, 1, 2) * = dx * dx;
+  Sij(x, 1, 2) *= dx * dx;
 #endif
 #endif
 	}
@@ -1031,18 +1031,16 @@ void projectFTtensor(Field<Cplx> & SijFT, Field<Cplx> & hijFT)
 void solveModifiedPoissonFT_quintessence(Field<Cplx> & sourceFT, Field<Cplx> & potFT, Real coeff, const double varphi_bg, const double varphi_prime_bg, const double alpha, const double Hcon, const double dtau)
 {
 
-  double f_varphi = alpha * varphi_bg * varphi_bg;
+  double alpha_phi = alpha * varphi_bg * varphi_bg;
   double f_prime_varphi = 2. * alpha * varphi_bg;
-  double beta_coeff = - 3. * ( Hcon * (1. + f_varphi) + .5 * varphi_prime_bg * f_prime_varphi) ;
-  double modif = - beta_coeff/((1. + f_varphi) * dtau);
+  double beta_coeff = - 3. * ( Hcon * (1. + alpha_phi) + .5 * varphi_prime_bg * f_prime_varphi) ;
+  double modif = - beta_coeff/((1. + alpha_phi) * dtau);
 
 	const int linesize = potFT.lattice().size(1);
 	int i;
 	Real * gridk2;
 	Real * sinc;
 	rKSite k(potFT.lattice());
-
-  // cout<< "dx^2:"<<dx2<<" linesize"<<(long) linesize<<endl;
 
 	gridk2 = (Real *) malloc(linesize * sizeof(Real));
   coeff /= -((long) linesize * (long) linesize * (long) linesize);
@@ -1059,13 +1057,9 @@ void solveModifiedPoissonFT_quintessence(Field<Cplx> & sourceFT, Field<Cplx> & p
     if (modif == 0.)
       potFT(k) = Cplx(0.,0.);
     else
-      //potFT(k) = sourceFT(k) * coeff / modif;
       potFT(k) = Cplx(0.,0.);
     k.next();
   }
-
-	//cout<< "coeff/modif: "<< coeff/modif <<endl;
-	//cout<< "our modif - GR value: "<< modif - 3.0 * Hcon/dtau <<" GR value (3 H / dtau): "<< 3.0 * Hcon/dtau <<endl;
 
 	for (; k.test(); k.next())
 	{
