@@ -145,8 +145,6 @@ void prepareFTsource_Tii(Field<FieldType> & phi, Field<FieldType> & source, Fiel
 		Sij(x, 1, 2) += 0.5 * phi(x+1+2) * phi(x+1+2);
 #endif
 #endif
-
-
 	}
 }
 
@@ -476,7 +474,7 @@ void prepareFTsource_Quintessence(Field<FieldType> & phi, Field<FieldType> & Tij
 //////////////////////////
 
 template <class FieldType>
-void prepareFTsource_Quintessence(Field<FieldType> & phi, Field<FieldType> & chi, Field<FieldType> & source, const FieldType bgmodel, Field<FieldType> & result, Field<FieldType> & pi, Field<FieldType> & V_pi, const double varphi_bg, const double varphi_prime_bg, const double alpha, const double Lambda, const double sigma, const double Hcon, const double fourpiG, const double a, const double dx, const double dtau)
+void prepareFTsource_Quintessence(Field<FieldType> & phi, Field<FieldType> & chi, Field<FieldType> & source, const FieldType bgmodel, Field<FieldType> & result, Field<FieldType> & pi, Field<FieldType> & V_pi, const double varphi_bg, const double varphi_prime_bg, const double alpha, const double Lambda, const double sigma, const double Hcon, const double fourpiG, const double a, const double dx, const double dtau, int non_linearity)
 {
 	Site x(phi.lattice());
 
@@ -488,55 +486,58 @@ void prepareFTsource_Quintessence(Field<FieldType> & phi, Field<FieldType> & chi
 
   // Coefficients:
   double alpha_coeff;
-  double beta_coeff = - 3. * ( Hcon * (1. + f_varphi) + .5 * varphi_prime_bg * f_prime_varphi) ;
-  double gamma_coeff = 3. * ( Hcon * Hcon * (1. + f_varphi) - varphi_prime_bg * varphi_prime_bg * fourpiG + Hcon * varphi_prime_bg * f_prime_varphi) ;
-  double nu_coeff;
-  double zeta_coeff = .5 * (3. * Hcon * (Hcon * f_prime_varphi + varphi_prime_bg * f_ddprime_varphi) - a * a *  V_prime_varphi);
   double lambda_coeff = 1.5 * (1. + f_varphi);
-  double eta_coeff = 1.5 * Hcon * f_prime_varphi - varphi_prime_bg * varphi_prime_bg * fourpiG ;
+  double beta_coeff = - 3. * ( Hcon * (1. + f_varphi) + .5 * varphi_prime_bg * f_prime_varphi) ;
+  double eta_coeff = 1.5 * Hcon * f_prime_varphi - varphi_prime_bg * fourpiG ;
+  double gamma_coeff = 3. * ( Hcon * Hcon * (1. + f_varphi) - varphi_prime_bg * varphi_prime_bg * fourpiG/3. + Hcon * varphi_prime_bg * f_prime_varphi) ;// 4 \pi G = 1/(2 M_pl^2)
   double mu_coeff = -.25 * (1. + 2. * f_ddprime_varphi);
+  double nu_coeff;
   double sigma_coeff = .5 * f_prime_varphi;
+  double zeta_coeff = .5 * (3. * Hcon * (Hcon * f_prime_varphi + varphi_prime_bg * f_ddprime_varphi) - a * a *  V_prime_varphi);
 
   // Terms:
-  double term1, term2, term3, term4, term5, term6, term7;
+  double term1, term2 = 0., term3, term4, term5, term6 = 0., term7;
 
   #ifdef PHINONLINEAR
   #ifdef ORIGINALMETRIC
 
 	for (x.first(); x.test(); x.next())
 	{
-    alpha_coeff = 6. * phi(x) * (1. + f_varphi) + f_varphi + f_prime_varphi * pi(x);
-    nu_coeff = -.5 * (f_prime_varphi * (1. + 4. * phi(x)) + f_ddprime_varphi * pi(x)) ;
+    alpha_coeff = 6. * phi(x) * (1. + f_varphi) + f_varphi + f_prime_varphi * pi(x); // Alpha should be kept at full order because  (fourpiG/a) * (source(x) - bgmodel)/(1.+alpha_coeff)
+    nu_coeff = -.5 * f_prime_varphi;
+    if (non_linearity == 1)
+    {
+      nu_coeff += -2. * f_prime_varphi * phi(x) - .5 * f_ddprime_varphi * pi(x) ;
+
+      term2 = lambda_coeff * (phi(x-0) - phi(x+0)) * (phi(x-0) - phi(x+0));
+      term2 += lambda_coeff * (phi(x-1) - phi(x+1)) * (phi(x-1) - phi(x+1));
+      term2 += lambda_coeff * (phi(x-2) - phi(x+2)) * (phi(x-2) - phi(x+2));
+      term2 /= 4. * dx * dx;
+
+      term6 = mu_coeff * (pi(x-0) - pi(x+0)) * (pi(x-0) - pi(x+0));
+      term6 += mu_coeff * (pi(x-1) - pi(x+1)) * (pi(x-1) - pi(x+1));
+      term6 += mu_coeff * (pi(x-2) - pi(x+2)) * (pi(x-2) - pi(x+2));
+      term6 /= 4. * dx * dx;
+
+      term7 = sigma_coeff * (phi(x-0) - phi(x+0)) * (pi(x-0) - pi(x+0));
+      term7 += sigma_coeff * (phi(x-1) - phi(x+1)) * (pi(x-1) - pi(x+1));
+      term7 += sigma_coeff * (phi(x-2) - phi(x+2)) * (pi(x-2) - pi(x+2));
+      term7 /= 4. * dx * dx;
+    }
+
     // Terms:
     term1 = gamma_coeff * (chi(x) - phi(x));
-
-    term2 = lambda_coeff * (phi(x-0) - phi(x+0)) * (phi(x-0) - phi(x+0));
-    term2 += lambda_coeff * (phi(x-1) - phi(x+1)) * (phi(x-1) - phi(x+1));
-    term2 += lambda_coeff * (phi(x-2) - phi(x+2)) * (phi(x-2) - phi(x+2));
-    term2 /= 4. * dx * dx;
-
     term3 = eta_coeff * V_pi(x);
     term4 = zeta_coeff * pi(x);
-
     term5 = nu_coeff * (pi(x-0) + pi(x+0) - 2. * pi(x));
     term5 += nu_coeff * (pi(x-1) + pi(x+1) - 2. * pi(x));
     term5 += nu_coeff * (pi(x-2) + pi(x+2) - 2. * pi(x));
     term5 /= dx * dx;
 
-    term6 = mu_coeff * (pi(x-0) - pi(x+0)) * (pi(x-0) - pi(x+0));
-    term6 += mu_coeff * (pi(x-1) - pi(x+1)) * (pi(x-1) - pi(x+1));
-    term6 += mu_coeff * (pi(x-2) - pi(x+2)) * (pi(x-2) - pi(x+2));
-    term6 /= 4. * dx * dx;
-
-    term7 = sigma_coeff * (phi(x-0) - phi(x+0)) * (pi(x-0) - pi(x+0));
-    term7 += sigma_coeff * (phi(x-1) - phi(x+1)) * (pi(x-1) - pi(x+1));
-    term7 += sigma_coeff * (phi(x-2) - phi(x+2)) * (pi(x-2) - pi(x+2));
-    term7 /= 4. * dx * dx;
-
-    result(x) = (1. - 4. * phi(x)) * (fourpiG/a) * (source(x) - bgmodel)/(1.+alpha_coeff);
-    result(x) += beta_coeff * phi(x) /dtau/ (1.+alpha_coeff);
-    result(x) +=  - (term1 + term2 + term3 + term4 + term5 + term6 + term7)/(1.+alpha_coeff);
-    result(x) *= dx * dx;
+    result(x) = (1. - 4. * phi(x)) * (fourpiG/a) * (source(x) - bgmodel);
+    result(x) += beta_coeff * phi(x) /dtau;
+    result(x) +=  - (term1 + term2 + term3 + term4 + term5 + term6 + term7);
+    result(x) *= dx * dx/(1.+alpha_coeff); // It's multiplied to dx^2 as it is done in geovlution GR case!
 	}
   #endif
   #endif

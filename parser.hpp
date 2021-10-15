@@ -1641,8 +1641,8 @@ int parseMetadata(parameter * & params, const int numparam, metadata & sim, cosm
   if (!parseParameter(params, numparam, "quinessence non-linear steps",  sim.nq_numsteps))
   	sim.nq_numsteps = 1;
 
-  if (!parseParameter(params, numparam, "quintessence non-linear", sim.NL_quintessence))
-  	sim.NL_quintessence = 1; //Default is linear kessence.
+  if (!parseParameter(params, numparam, "quintessence non-linear", quintessence.NL_quintessence))
+  	quintessence.NL_quintessence = 0; //Default is linear quintessence.
 
 	cosmo.num_ncdm = MAX_PCL_SPECIES-2;
 	if (!parseParameter(params, numparam, "m_ncdm", cosmo.m_ncdm, cosmo.num_ncdm))

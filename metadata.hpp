@@ -204,7 +204,6 @@ struct metadata
 	int numpts;
   //quintessence
   int nq_numsteps;
-  int NL_quintessence;
 	int downgrade_factor;
 	long numpcl[MAX_PCL_SPECIES];
 	int tracer_factor[MAX_PCL_SPECIES];
@@ -298,12 +297,15 @@ struct cosmology
 
 struct mg_cosmology
 {
+  // Non-linearities
+  int NL_quintessence;
 	// Action parameters
 	double mg_alpha;
   double mg_Lambda;
   double mg_sigma;
   double ic_vx;
   double ic_vx_p;
+
   // Vector of background values to be filled with mg_import function
   std::vector<double> a_vec;
   std::vector<double> H_vec;

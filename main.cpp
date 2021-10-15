@@ -195,6 +195,12 @@ int main(int argc, char **argv)
 	usedparams = parseMetadata(params, numparam, sim, cosmo, quintessence, ic);
 
 	COUT << " parsing of settings file completed. " << numparam << " parameters found, " << usedparams << " were used." << endl;
+  if (quintessence.NL_quintessence == 1)
+  {
+    COUT<<"The quintessence is solved with non-linear corrections!"<<endl;
+  }
+  else COUT<<"The linear quintessence equations are being solved!"<<endl;
+
 
 	sprintf(filename, "%s%s_settings_used.ini", sim.output_path, sim.basename_generic);
 	saveParameterFile(filename, params, numparam);
@@ -633,8 +639,8 @@ int main(int argc, char **argv)
 
 			if (dtau_old > 0.)
 			{
-				prepareFTsource<Real>(phi, chi, source, cosmo.Omega_cdm + cosmo.Omega_b + bg_ncdm(a, cosmo), source, 3. * Hconf(a, fourpiG, cosmo) * dx * dx / dtau_old, fourpiG * dx * dx / a, 3. * Hconf(a, fourpiG, cosmo) * Hconf(a, fourpiG, cosmo) * dx * dx);  // prepare nonlinear source for phi update
-        // prepareFTsource_Quintessence(phi, chi, source, cosmo.Omega_cdm + cosmo.Omega_b + bg_ncdm(a, cosmo), source, pi, V_pi, mg_field, mg_field_prime, alpha, Lambda, sigma, Hconf_quintessence, fourpiG, a, dx, dtau_old); // prepare nonlinear source for phi update using extended quintessence expressions
+				// prepareFTsource<Real>(phi, chi, source, cosmo.Omega_cdm + cosmo.Omega_b + bg_ncdm(a, cosmo), source, 3. * Hconf(a, fourpiG, cosmo) * dx * dx / dtau_old, fourpiG * dx * dx / a, 3. * Hconf(a, fourpiG, cosmo) * Hconf(a, fourpiG, cosmo) * dx * dx);  // prepare nonlinear source for phi update
+        prepareFTsource_Quintessence(phi, chi, source, cosmo.Omega_cdm + cosmo.Omega_b + bg_ncdm(a, cosmo), source, pi, V_pi, mg_field, mg_field_prime, alpha, Lambda, sigma, Hconf_quintessence, fourpiG, a, dx, dtau_old, quintessence.NL_quintessence); // prepare nonlinear source for phi update using extended quintessence expressions
 
 #ifdef BENCHMARK
 				ref2_time= MPI_Wtime();
@@ -911,7 +917,7 @@ int main(int argc, char **argv)
   {
     for (i=0;i<sim.nq_numsteps;i++)
     {
-      update_V_pi(phi, phi_prime, chi, chi_prime, pi, V_pi, TiimT00, source, mg_field, mg_field_prime, alpha, Lambda, sigma,Hconf_prime_quintessence, Hconf_prime_quintessence, fourpiG, a_quintessence, dx, -dtau/ (2. * sim.nq_numsteps), sim.NL_quintessence);
+      update_V_pi(phi, phi_prime, chi, chi_prime, pi, V_pi, TiimT00, source, mg_field, mg_field_prime, alpha, Lambda, sigma,Hconf_prime_quintessence, Hconf_prime_quintessence, fourpiG, a_quintessence, dx, -dtau/ (2. * sim.nq_numsteps), quintessence.NL_quintessence);
       V_pi.updateHalo();
     }
   }
@@ -924,7 +930,7 @@ int main(int argc, char **argv)
 			 alpha, Lambda, sigma,
 			 gsl_spline_eval(quintessence.spline_H,a_quintessence,quintessence.acc_H),
 			 gsl_spline_eval(quintessence.spline_H_prime,a_quintessence,quintessence.acc_H_prime),
-			 fourpiG, a_quintessence, dx, dtau/ sim.nq_numsteps, sim.NL_quintessence);
+			 fourpiG, a_quintessence, dx, dtau/ sim.nq_numsteps, quintessence.NL_quintessence);
     V_pi.updateHalo();
 
 		a_quintessence = gsl_spline_eval(quintessence.spline_a ,
