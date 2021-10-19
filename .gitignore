@@ -23,3 +23,6 @@ output/lcdm_pk002_pi.dat
 output/lcdm_pk002_V_pi.dat
 makefile
 makefile
+output/lcdm_pk002_delta.dat
+output/lcdm_pk001_delta.dat
+output/lcdm_pk000_delta.dat

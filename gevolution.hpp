@@ -351,11 +351,20 @@ void prepareFTsource_Quintessence(Field<FieldType> & phi, Field<FieldType> & Tij
 
   // Coefficients:
   double beta_coeff = -3. * ( Hcon * (1. + f_varphi) + .5 * varphi_prime_bg * f_prime_varphi) ;
+  #ifndef PHINONLINEAR
+  COUT << COLORTEXT_RED << " ERROR" << COLORTEXT_RESET << ": You asked for LINEAR PHI while the Equintessence equations are written up using the PHINONLINEAR!" << endl;
+  parallel.abortForce();
+  #endif
 
+  #ifndef ORIGINALMETRIC
+  COUT << COLORTEXT_RED << " ERROR" << COLORTEXT_RESET << ": You asked for expenential metric while the Equintessence equations are written up using the original metric!" << endl;
+  parallel.abortForce();
+  #endif
+
+  #ifdef PHINONLINEAR
+  #ifdef ORIGINALMETRIC
 	for (x.first(); x.test(); x.next())
 	{
-#ifdef PHINONLINEAR
-#ifdef ORIGINALMETRIC
     // 0-0-component:
     Sij(x, 0, 0) =  2. * fourpiG * Tij(x, 0, 0) / a / beta_coeff;
 		Sij(x, 0, 0) += (2. * chi(x) - 4. * phi(x)) * (phi(x-0) + phi(x+0) - 2. * phi(x)) / dx / dx;
@@ -364,11 +373,7 @@ void prepareFTsource_Quintessence(Field<FieldType> & phi, Field<FieldType> & Tij
     Sij(x, 0, 0) += .25 * ((2.*fourpiG + f_ddprime_varphi)/beta_coeff) * (pi(x+0) - pi(x-0)) * (pi(x+0) - pi(x-0)) / dx / dx;
     Sij(x, 0, 0) += ((f_prime_varphi + f_ddprime_varphi)/beta_coeff) * (pi(x-0) + pi(x+0) - 2. * pi(x)) / dx / dx;
     Sij(x, 0, 0) *= (dx * dx);
-#endif
-#endif
 
-#ifdef PHINONLINEAR
-#ifdef ORIGINALMETRIC
 		// 1-1-component:
     Sij(x, 1, 1) =  2. * fourpiG * Tij(x, 1, 1) / a / beta_coeff;
     Sij(x, 1, 1) += (2. * chi(x) - 4. * phi(x)) * (phi(x-1) + phi(x+1) - 2. * phi(x)) / dx / dx;
@@ -377,11 +382,7 @@ void prepareFTsource_Quintessence(Field<FieldType> & phi, Field<FieldType> & Tij
     Sij(x, 1, 1) += .25 * ((2.*fourpiG + f_ddprime_varphi)/beta_coeff) * (pi(x+1) - pi(x-1)) * (pi(x+1) - pi(x-1)) / dx / dx;
     Sij(x, 1, 1) += ((f_prime_varphi + f_ddprime_varphi)/beta_coeff) * (pi(x-1) + pi(x+1) - 2. * pi(x)) / dx / dx;
     Sij(x, 1, 1) *= dx * dx;
-#endif
-#endif
 
-#ifdef PHINONLINEAR
-#ifdef ORIGINALMETRIC
   	// 2-2-component:
     Sij(x, 2, 2) =  2. * fourpiG * Tij(x, 2, 2) / a / beta_coeff;
     Sij(x, 2, 2) += (2. * chi(x) - 4. * phi(x)) * (phi(x-2) + phi(x+2) - 2. * phi(x)) / dx / dx;
@@ -390,11 +391,7 @@ void prepareFTsource_Quintessence(Field<FieldType> & phi, Field<FieldType> & Tij
     Sij(x, 2, 2) += .25 * ((2.*fourpiG + f_ddprime_varphi)/beta_coeff) * (pi(x+2) - pi(x-2)) * (pi(x+2) - pi(x-2)) / dx / dx;
     Sij(x, 2, 2) += ((f_prime_varphi + f_ddprime_varphi)/beta_coeff) * (pi(x-2) + pi(x+2) - 2. * pi(x)) / dx / dx;
     Sij(x, 2, 2) *= dx * dx;
-#endif
-#endif
 
-#ifdef PHINONLINEAR
-#ifdef ORIGINALMETRIC
 		// 0-1-component:
 		Sij(x, 0, 1) =   2. * fourpiG * Tij(x, 0, 1) / a / beta_coeff;
 		Sij(x, 0, 1) += -2. * (phi(x+0+1) - phi(x+1) + phi(x+0) - phi(x)) * (phi(x+0+1) - phi(x+0) + phi(x+1) - phi(x)) / (2. * dx) / (2. * dx);
@@ -406,11 +403,7 @@ void prepareFTsource_Quintessence(Field<FieldType> & phi, Field<FieldType> & Tij
     Sij(x, 0, 1) +=  ((2.*fourpiG + f_ddprime_varphi)/beta_coeff) * (pi(x+0+1) - pi(x+1) + pi(x+0) - pi(x)) * (pi(x+0+1) - pi(x+0) + pi(x+1) - pi(x)) / (2. * dx) / (2. * dx);
     Sij(x, 0, 1) +=  ((f_prime_varphi + f_ddprime_varphi)/beta_coeff) * (pi(x+0+1) - pi(x+1) - pi(x+0) + pi(x)) / dx / dx;
     Sij(x, 0, 1) *= dx * dx;
-#endif
-#endif
 
-#ifdef PHINONLINEAR
-#ifdef ORIGINALMETRIC
 		// 0-2-component:
 		Sij(x, 0, 2) =   2. * fourpiG * Tij(x, 0, 2) / a / beta_coeff;
 		Sij(x, 0, 2) += -2. * (phi(x+0+2) - phi(x+2) + phi(x+0) - phi(x)) * (phi(x+0+2) - phi(x+0) + phi(x+2) - phi(x)) / (2. * dx) / (2. * dx);
@@ -422,11 +415,7 @@ void prepareFTsource_Quintessence(Field<FieldType> & phi, Field<FieldType> & Tij
     Sij(x, 0, 2) +=  ((2.*fourpiG + f_ddprime_varphi)/beta_coeff) * (pi(x+0+2) - pi(x+2) + pi(x+0) - pi(x)) * (pi(x+0+2) - pi(x+0) + pi(x+2) - pi(x)) / (2. * dx) / (2. * dx);
     Sij(x, 0, 2) +=  ((f_prime_varphi + f_ddprime_varphi)/beta_coeff) * (pi(x+0+2) - pi(x+2) - pi(x+0) + pi(x)) / dx / dx;
     Sij(x, 0, 2) *= dx * dx;
-#endif
-#endif
 
-#ifdef PHINONLINEAR
-#ifdef ORIGINALMETRIC
   // 1-2-component:
 	Sij(x, 1, 2) =   2. * fourpiG * Tij(x, 1, 2) / a / beta_coeff;
 	Sij(x, 1, 2) += -2. * (phi(x+1+2) - phi(x+2) + phi(x+1) - phi(x)) * (phi(x+1+2) - phi(x+1) + phi(x+2) - phi(x)) / (2. * dx) / (2. * dx);
@@ -439,9 +428,9 @@ void prepareFTsource_Quintessence(Field<FieldType> & phi, Field<FieldType> & Tij
   Sij(x, 1, 2) +=  ((f_prime_varphi + f_ddprime_varphi)/beta_coeff) * (pi(x+1+2) - pi(x+2) - pi(x+1) + pi(x)) / dx / dx;
 
   Sij(x, 1, 2) *= dx * dx;
-#endif
-#endif
 	}
+  #endif
+  #endif
 }
 
 //////////////////////////
@@ -497,6 +486,16 @@ void prepareFTsource_Quintessence(Field<FieldType> & phi, Field<FieldType> & chi
 
   // Terms:
   double term1, term2 = 0., term3, term4, term5, term6 = 0., term7;
+
+  #ifndef PHINONLINEAR
+  COUT << COLORTEXT_RED << " ERROR" << COLORTEXT_RESET << ": You asked for LINEAR PHI while the Equintessence equations are written up using the PHINONLINEAR!" << endl;
+  parallel.abortForce();
+  #endif
+
+  #ifndef ORIGINALMETRIC
+  COUT << COLORTEXT_RED << " ERROR" << COLORTEXT_RESET << ": You asked for expenential metric while the Equintessence equations are written up using the original metric!" << endl;
+  parallel.abortForce();
+  #endif
 
   #ifdef PHINONLINEAR
   #ifdef ORIGINALMETRIC

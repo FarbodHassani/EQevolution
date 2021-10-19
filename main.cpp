@@ -637,6 +637,7 @@ int main(int argc, char **argv)
 				COUT << " cycle " << cycle << ", background information: z = " << (1./a) - 1. << ", average T00 = " << T00hom << ", background model = " << cosmo.Omega_cdm + cosmo.Omega_b + bg_ncdm(a, cosmo) << endl;
 			}
 
+
 			if (dtau_old > 0.)
 			{
 				// prepareFTsource<Real>(phi, chi, source, cosmo.Omega_cdm + cosmo.Omega_b + bg_ncdm(a, cosmo), source, 3. * Hconf(a, fourpiG, cosmo) * dx * dx / dtau_old, fourpiG * dx * dx / a, 3. * Hconf(a, fourpiG, cosmo) * Hconf(a, fourpiG, cosmo) * dx * dx);  // prepare nonlinear source for phi update
@@ -651,8 +652,8 @@ int main(int argc, char **argv)
 				fft_count++;
 #endif
 
-				solveModifiedPoissonFT(scalarFT, scalarFT, 1. / (dx * dx), 3. * Hconf(a, fourpiG, cosmo) / dtau_old);  // phi update (k-space)
-        // solveModifiedPoissonFT_quintessence (scalarFT, scalarFT, 1. / (dx * dx), mg_field, mg_field_prime, alpha, Hconf_quintessence, dtau_old);
+				// solveModifiedPoissonFT(scalarFT, scalarFT, 1. / (dx * dx), 3. * Hconf(a, fourpiG, cosmo) / dtau_old);  // phi update (k-space)
+        solveModifiedPoissonFT_quintessence (scalarFT, scalarFT, 1. / (dx * dx), mg_field, mg_field_prime, alpha, Hconf_quintessence, dtau_old);
 
 
 #ifdef BENCHMARK
