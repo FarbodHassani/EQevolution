@@ -595,11 +595,12 @@ void loadBGFunctions(background & class_background, mg_cosmology & quintessence,
 	ptr = strtok(coltitles, _DELIMITER_);
 	while (ptr != NULL)
 	{
+    if (strncmp(ptr,"H [1/Mpc]", strlen("H [1/Mpc]")) == 0) Hcol = cols;
+
     if (strncmp(qname,"H_prime",strlen("H_prime")) == 0)
     {
       if (strncmp(ptr, "(.)rho_tot", strlen("(.)rho_tot")) == 0) bgcol = cols;
       else if (strncmp(ptr, "(.)p_tot", strlen("(.)p_tot")) == 0) bgcol2 = cols;
-      else if (strncmp(ptr,"H [1/Mpc]", strlen("H [1/Mpc]")) == 0) Hcol = cols;
       else if (strncmp(ptr, zname, strlen(zname)) == 0) zcol = cols;
     }
     else if (strncmp(qname,"w_mg",strlen("w_mg")) == 0)
@@ -630,7 +631,6 @@ void loadBGFunctions(background & class_background, mg_cosmology & quintessence,
     else if (strncmp(qname,"conf. time [Mpc]",strlen("conf. time [Mpc]")) == 0 || strncmp(qname,"scale factor",strlen("scale factor")) == 0)
     {
       if (strncmp(ptr, "conf. time [Mpc]", strlen("conf. time [Mpc]")) == 0) bgcol = cols;
-      else if (strncmp(ptr,"H [1/Mpc]", strlen("H [1/Mpc]")) == 0) Hcol = cols;
       else if (strncmp(ptr, zname, strlen(zname)) == 0) zcol = cols;
     }
     else if (strncmp(qname,"phi\'\'",strlen("phi\'\'")) == 0)
@@ -646,8 +646,6 @@ void loadBGFunctions(background & class_background, mg_cosmology & quintessence,
     {
       if (strncmp(ptr, qname, strlen(qname)) == 0) bgcol = cols;
       else if (strncmp(ptr, zname, strlen(zname)) == 0) zcol = cols;
-      // if (strncmp(ptr, "phi\'\'", strlen("phi\'\'")) == 0) bgcol = cols;
-      // if (strncmp(ptr, "phi\'", strlen("phi\'")) == 0) bgcol = cols;
     }
 		cols++;
     ptr = strtok(NULL, _DELIMITER_);
@@ -718,11 +716,11 @@ void loadBGFunctions(background & class_background, mg_cosmology & quintessence,
     }
     else if (strncmp(qname,"phi_smg",strlen("phi_smg")) == 0)
     {
-      bg[i-bg_size] /=  sqrt(2.*fourpiG/3.);
+      bg[i-bg_size] /=  (sqrt(2.*fourpiG/3.)/data[(class_background.bt_size-1)*cols + Hcol]); //H0 in gevolution sqrt(2.*fourpiG/3.)
     }
     else if (strncmp(qname,"phi\'\'",strlen("phi\'\'")) == 0)
     {
-      bg[i-bg_size] *=  sqrt(2.*fourpiG/3.);
+      bg[i-bg_size] *=  (sqrt(2.*fourpiG/3.)/data[(class_background.bt_size-1)*cols + Hcol]) ;
     }
 
     if (i > bg_size)

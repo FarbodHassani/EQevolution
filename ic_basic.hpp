@@ -1756,6 +1756,8 @@ void generateIC_basic(metadata & sim, icsettings & ic, cosmology & cosmo, mg_cos
  double * scalar_field = NULL;
  double * scalar_field_prime = NULL;
  double * k_mg = NULL;
+ double H0_hiclass = 100*cosmo.h/(C_SPEED_OF_LIGHT*100.);
+ double H0_gev = gsl_spline_eval(quintessence.spline_H,1.0,quintessence.acc_H);
 
 
  int npts=0;
@@ -1771,11 +1773,10 @@ void generateIC_basic(metadata & sim, icsettings & ic, cosmology & cosmo, mg_cos
  {
    k_mg[i] = tk_d_mg -> x[i];
 
-   delta_phi = tk_d_mg->y[i] * (mg_field_prime/a); //Eq. 2.16 of 1605.06102
+   delta_phi = tk_d_mg->y[i] * (H0_hiclass/H0_gev) * (mg_field_prime/a); //Eq. 2.16 of 1605.06102
    scalar_field[i] =  - M_PI * delta_phi * sqrt(Pk_primordial(tk_d_mg->x[i] * cosmo.h / sim.boxsize, ic)/ tk_d_mg->x[i])  / tk_d_mg->x[i];
-   // scalar_field_prime[i] = - (M_PI/a) * (tk_t_mg->y[i] * mg_field_prime  + tk_d_mg->y[i] * ( -Hconf_quintessence * mg_field_prime  + mg_field_prime_prime)) * sqrt( Pk_primordial(tk_t_mg->x[i] * cosmo.h / sim.boxsize, ic)/ tk_t_mg->x[i])/ tk_t_mg->x[i];
-   scalar_field_prime[i] = - M_PI * (tk_t_mg->y[i]) * sqrt( Pk_primordial(tk_t_mg->x[i] * cosmo.h / sim.boxsize, ic)/ tk_t_mg->x[i])/ tk_t_mg->x[i];
 
+   scalar_field_prime[i] = - (M_PI/a) * (tk_t_mg->y[i] * mg_field_prime  + tk_d_mg->y[i] * (H0_hiclass/H0_gev)  *  ( -Hconf_quintessence * mg_field_prime  + mg_field_prime_prime )) * sqrt( Pk_primordial(tk_t_mg->x[i] * cosmo.h / sim.boxsize, ic)/ tk_t_mg->x[i])/ tk_t_mg->x[i];
  }
  // Field realization
  gsl_spline_free(tk_d_mg);

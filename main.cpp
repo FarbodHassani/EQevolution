@@ -640,8 +640,8 @@ int main(int argc, char **argv)
 
 			if (dtau_old > 0.)
 			{
-				// prepareFTsource<Real>(phi, chi, source, cosmo.Omega_cdm + cosmo.Omega_b + bg_ncdm(a, cosmo), source, 3. * Hconf(a, fourpiG, cosmo) * dx * dx / dtau_old, fourpiG * dx * dx / a, 3. * Hconf(a, fourpiG, cosmo) * Hconf(a, fourpiG, cosmo) * dx * dx);  // prepare nonlinear source for phi update
-        prepareFTsource_Quintessence(phi, chi, source, cosmo.Omega_cdm + cosmo.Omega_b + bg_ncdm(a, cosmo), source, pi, V_pi, mg_field, mg_field_prime, alpha, Lambda, sigma, Hconf_quintessence, fourpiG, a, dx, dtau_old, quintessence.NL_quintessence); // prepare nonlinear source for phi update using extended quintessence expressions
+				prepareFTsource<Real>(phi, chi, source, cosmo.Omega_cdm + cosmo.Omega_b + bg_ncdm(a, cosmo), source, 3. * Hconf(a, fourpiG, cosmo) * dx * dx / dtau_old, fourpiG * dx * dx / a, 3. * Hconf(a, fourpiG, cosmo) * Hconf(a, fourpiG, cosmo) * dx * dx);  // prepare nonlinear source for phi update
+        // prepareFTsource_Quintessence(phi, chi, source, cosmo.Omega_cdm + cosmo.Omega_b + bg_ncdm(a, cosmo), source, pi, V_pi, mg_field, mg_field_prime, alpha, Lambda, sigma, Hconf_quintessence, fourpiG, a, dx, dtau_old, quintessence.NL_quintessence); // prepare nonlinear source for phi update using extended quintessence expressions
 
 #ifdef BENCHMARK
 				ref2_time= MPI_Wtime();
@@ -652,8 +652,8 @@ int main(int argc, char **argv)
 				fft_count++;
 #endif
 
-				// solveModifiedPoissonFT(scalarFT, scalarFT, 1. / (dx * dx), 3. * Hconf(a, fourpiG, cosmo) / dtau_old);  // phi update (k-space)
-        solveModifiedPoissonFT_quintessence (scalarFT, scalarFT, 1. / (dx * dx), mg_field, mg_field_prime, alpha, Hconf_quintessence, dtau_old);
+				solveModifiedPoissonFT(scalarFT, scalarFT, 1. / (dx * dx), 3. * Hconf(a, fourpiG, cosmo) / dtau_old);  // phi update (k-space)
+        // solveModifiedPoissonFT_quintessence (scalarFT, scalarFT, 1. / (dx * dx), mg_field, mg_field_prime, alpha, Hconf_quintessence, dtau_old);
 
 
 #ifdef BENCHMARK
@@ -702,8 +702,8 @@ int main(int argc, char **argv)
 			else
 			{
 				if (cycle == 0)
-					fprintf(outfile, "# background statistics\n# cycle   tau/boxsize    a             conformal H/H0   scalar(phi)   scalar_p    scalar_pp    phi(k=0)       T00(k=0)\n");
-				fprintf(outfile, " %6d   %e   %e   %e   %e   %e   %e   %e   %e\n", cycle, tau, a, Hconf_quintessence / gsl_spline_eval(quintessence.spline_H, 1., quintessence.acc_H), mg_field, mg_field_prime, mg_field_prime_prime, scalarFT(kFT).real(), T00hom);
+					fprintf(outfile, "# background statistics\n# cycle   tau/boxsize    a             conformal H/H0   scalar(phi)*H0   scalar_p  scalar_pp/H0     phi(k=0)       T00(k=0)\n");
+				fprintf(outfile, " %6d   %e   %e   %e   %e   %e   %e   %e   %e\n", cycle, tau, a, Hconf_quintessence / gsl_spline_eval(quintessence.spline_H, 1., quintessence.acc_H), mg_field*gsl_spline_eval(quintessence.spline_H, 1., quintessence.acc_H), mg_field_prime, mg_field_prime_prime/gsl_spline_eval(quintessence.spline_H, 1., quintessence.acc_H), scalarFT(kFT).real(), T00hom);
 				fclose(outfile);
 			}
 		}
@@ -914,6 +914,7 @@ int main(int argc, char **argv)
 // Leap-frog quintessence - the Klein-Gordon equation.
   a_quintessence = a;
   //First we update zeta_half to have it at -1/2 just in the first loop
+
   if(cycle==0)
   {
     for (i=0;i<sim.nq_numsteps;i++)
@@ -950,6 +951,7 @@ int main(int argc, char **argv)
 			quintessence.acc_a);
     // rungekutta4bg(a_quintessence, fourpiG, cosmo,  dtau  / sim.nq_numsteps / 2.0 );
   }
+
 #ifdef BENCHMARK
     quintessence_update_time += MPI_Wtime() - ref_time;
     ref_time = MPI_Wtime();
