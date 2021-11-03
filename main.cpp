@@ -919,7 +919,7 @@ int main(int argc, char **argv)
   {
     for (i=0;i<sim.nq_numsteps;i++)
     {
-      update_V_pi(phi, phi_prime, chi, chi_prime, pi, V_pi, TiimT00, source, mg_field, mg_field_prime, alpha, Lambda, sigma,Hconf_prime_quintessence, Hconf_prime_quintessence, fourpiG, a_quintessence, dx, -dtau/ (2. * sim.nq_numsteps), quintessence.NL_quintessence);
+      update_V_pi(phi, phi_prime, chi, chi_prime, pi, V_pi, TiimT00, source, mg_field, mg_field_prime, alpha, Lambda, sigma, Hconf_quintessence,  Hconf_prime_quintessence, fourpiG, a_quintessence, dx, -dtau/ (2. * sim.nq_numsteps), quintessence.NL_quintessence);
       V_pi.updateHalo();
     }
   }

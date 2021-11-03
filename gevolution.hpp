@@ -708,6 +708,7 @@ void update_V_pi(Field<FieldType> & phi, Field<FieldType> & phi_prime, Field<Fie
 				V_pi(x) = (1. + coeff_C * dtau/2.) * V_pi(x)
 				+ coeff_D * pi(x) + coeff_E * Laplacian_pi + coeff_F * Gradpi_Gradpi + varphi_prime_bg *  (4. * phi_prime(x) - chi_prime(x)) + coeff_G * (phi(x) - chi(x)) + coeff_H * Laplacian_phi
 				+ a * a * f_prime_varphi/gamma/M_pl2/3. * TiimT00(x);
+        cout<<" (Hcon*Hcon) :  "<< (Hcon*Hcon) << " H_prime: " << H_prime <<"   ((f_prime_varphi*f_prime_varphi * (2.+3.* M_pl2 *f_ddprime_varphi) - 2.* f_ddprime_varphi * (1.+f_varphi))):"<<(f_prime_varphi*f_prime_varphi * (2.+3.* M_pl2 *f_ddprime_varphi) - 2.* f_ddprime_varphi * (1.+f_varphi)) <<"     coeff_D"<<coeff_D<<" V_pi(x) :"<<V_pi(x) <<endl;
         V_pi(x) /= (1. - coeff_C * dtau/2.);
       }
   }
