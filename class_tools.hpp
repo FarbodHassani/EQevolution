@@ -684,7 +684,7 @@ void loadBGFunctions(background & class_background, mg_cosmology & quintessence,
 		a[i-bg_size] = 1./(1. + data[i*cols + zcol]);
     if (strncmp(qname,"H_prime",strlen("H_prime")) == 0)
     {
-      bg[i-bg_size] = -(3.0/2.0) * a[i-bg_size] *  (data[i*cols + bgcol] + data[i*cols + bgcol2]) * sqrt(2.*fourpiG/3.) * sqrt(2.*fourpiG/3.)/data[(class_background.bt_size-1)*cols + Hcol]/data[(class_background.bt_size-1)*cols + Hcol];
+      bg[i-bg_size] = -(1.0/2.0) * a[i-bg_size] * a[i-bg_size] *  (data[i*cols + bgcol] + 3.0 * data[i*cols + bgcol2]) * sqrt(2.*fourpiG/3.) * sqrt(2.*fourpiG/3.)/data[(class_background.bt_size-1)*cols + Hcol]/data[(class_background.bt_size-1)*cols + Hcol];
     }
     else if (strncmp(qname,"w_mg",strlen("w_mg")) == 0)
     {
