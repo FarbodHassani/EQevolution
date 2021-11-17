@@ -242,13 +242,13 @@ int main(int argc, char **argv)
   Field<Real> V_pi; // V_pi =: conformal time derivative of delta varphi
 	Field<Real> phi_old;
 	Field<Real> chi_old;
-	Field<Real> phi_prime;
-	Field<Real> chi_prime;
+	//Field<Real> phi_prime;
+	//Field<Real> chi_prime;
   Field<Real> TiimT00;
 	Field<Cplx> scalarFT_phi_old;
 	Field<Cplx> scalarFT_chi_old;
-	Field<Cplx> scalarFT_phi_prime;
-	Field<Cplx> scalarFT_chi_prime;
+	//Field<Cplx> scalarFT_phi_prime;
+	//Field<Cplx> scalarFT_chi_prime;
   Field<Cplx> scalarFT_pi;
   Field<Cplx> scalarFT_V_pi;
   Field<Cplx> scalarFT_TiimT00;
@@ -256,8 +256,8 @@ int main(int argc, char **argv)
 	V_pi.initialize(lat,1);
 	phi_old.initialize(lat,1);
 	chi_old.initialize(lat,1);
-	phi_prime.initialize(lat,1);
-	chi_prime.initialize(lat,1);
+	//phi_prime.initialize(lat,1);
+	//chi_prime.initialize(lat,1);
   TiimT00.initialize(lat,1);
 	scalarFT_pi.initialize(latFT,1);
 	PlanFFT<Cplx> plan_pi(&pi, &scalarFT_pi);
@@ -267,10 +267,10 @@ int main(int argc, char **argv)
 	PlanFFT<Cplx> plan_phi_old(&phi_old, &scalarFT_phi_old);
 	scalarFT_chi_old.initialize(latFT,1);
 	PlanFFT<Cplx> plan_chi_old(&chi_old, &scalarFT_chi_old);
-	scalarFT_phi_prime.initialize(latFT,1);
-	PlanFFT<Cplx> plan_phi_prime(&phi_prime, &scalarFT_phi_prime);
-	scalarFT_chi_prime.initialize(latFT,1);
-	PlanFFT<Cplx> plan_chi_prime(&chi_prime, &scalarFT_chi_prime);
+	//scalarFT_phi_prime.initialize(latFT,1);
+	//PlanFFT<Cplx> plan_phi_prime(&phi_prime, &scalarFT_phi_prime);
+	//scalarFT_chi_prime.initialize(latFT,1);
+	//PlanFFT<Cplx> plan_chi_prime(&chi_prime, &scalarFT_chi_prime);
   scalarFT_TiimT00.initialize(latFT,1);
   PlanFFT<Cplx> plan_TiimT00(&TiimT00, &scalarFT_TiimT00);
 	Field<Real> phi;
@@ -529,8 +529,8 @@ int main(int argc, char **argv)
 	{
     for (x.first(); x.test(); x.next())
     {
-			phi_prime(x) = ( phi(x)-phi_old(x) )/dtau_old;
-			chi_prime(x) = ( chi(x)-chi_old(x) )/dtau_old;
+			phi_old(x)=phi(x);
+			chi_old(x)=chi(x);
      }
 
 #ifdef BENCHMARK
@@ -912,21 +912,21 @@ int main(int argc, char **argv)
 #endif
 
 // Leap-frog quintessence - the Klein-Gordon equation.
-  a_quintessence = a;
+    a_quintessence = gsl_spline_eval(quintessence.spline_a ,
+                                     gsl_spline_eval(quintessence.spline_particleHorizon,a, quintessence.acc_particleHorizon) - dtau / 2.,
+                                     quintessence.acc_a);
   //First we update zeta_half to have it at -1/2 just in the first loop
 
   if(cycle==0)
   {
-    for (i=0;i<sim.nq_numsteps;i++)
-    {
-      update_V_pi(phi, phi_prime, chi, chi_prime, pi, V_pi, TiimT00, source, mg_field, mg_field_prime, alpha, Lambda, sigma, Hconf_quintessence,  Hconf_prime_quintessence, fourpiG, a_quintessence, dx, -dtau/ (2. * sim.nq_numsteps), quintessence.NL_quintessence);
+      update_V_pi(phi, phi_old, chi, chi_old, pi, V_pi, TiimT00, source, mg_field, mg_field_prime, alpha, Lambda, sigma, Hconf_quintessence,  Hconf_prime_quintessence, fourpiG, a, dx, -dtau/ 2., quintessence.NL_quintessence);
       V_pi.updateHalo();
-    }
   }
  //Then we start the main loop V_pi is updated to get V_pi(n+1/2) from pi(n) and V_pi(n-1/2)
   for (i=0;i<sim.nq_numsteps;i++)
   {
-    update_V_pi(phi, phi_prime, chi, chi_prime, pi, V_pi, TiimT00, source,
+
+      update_V_pi(phi, phi_old, chi, chi_old, pi, V_pi, TiimT00, source,
 			 gsl_spline_eval(quintessence.spline_mg_field,a_quintessence,quintessence.acc_mg_field),
 			 gsl_spline_eval(quintessence.spline_mg_field_p,a_quintessence,quintessence.acc_mg_field_p),
 			 alpha, Lambda, sigma,

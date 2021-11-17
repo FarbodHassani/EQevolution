@@ -657,15 +657,17 @@ void update_pi( double dtau, Field<FieldType> & pi, Field<FieldType> & V_pi)
 //////////////////////////
 
 template <class FieldType>
-void update_V_pi(Field<FieldType> & phi, Field<FieldType> & phi_prime, Field<FieldType> & chi, Field<FieldType> & chi_prime, Field<FieldType> & pi, Field<FieldType> & V_pi, Field<FieldType> & TiimT00, Field<FieldType> & source, const double varphi_bg, const double varphi_prime_bg, const double alpha, const double Lambda, const double sigma, const double Hcon, const double H_prime, const double fourpiG, const double a, const double dx, const double dtau, int non_linearity)
+void update_V_pi(Field<FieldType> & phi, Field<FieldType> & phi_old, Field<FieldType> & chi, Field<FieldType> & chi_old, Field<FieldType> & pi, Field<FieldType> & V_pi, Field<FieldType> & TiimT00, Field<FieldType> & source, const double varphi_bg, const double varphi_prime_bg, const double alpha, const double Lambda, const double sigma, const double Hcon, const double H_prime, const double fourpiG, const double a, const double dx, const double dtau, int non_linearity)
   {
-    double f_varphi = alpha * varphi_bg * varphi_bg;
-    double f_prime_varphi = 2. * alpha * varphi_bg;
-    double f_ddprime_varphi = 2. * alpha;
+    double phi_prime, chi_prime;
+
+    double f_varphi = 0.*alpha * varphi_bg * varphi_bg;
+    double f_prime_varphi = 0.*2. * alpha * varphi_bg;
+    double f_ddprime_varphi = 0.*2. * alpha;
     double f_dddprime_varphi = 0.;
-    double V_varphi = Lambda * Lambda * Lambda * Lambda * pow(varphi_bg, -sigma) ;
-    double V_prime_varphi = - sigma * Lambda * Lambda * Lambda * Lambda * pow(varphi_bg, -sigma-1.);
-    double V_ddprime_varphi = sigma * (sigma + 1.0) * Lambda * Lambda * Lambda * Lambda * pow(varphi_bg, -sigma-2.);
+    double V_varphi = 0.*Lambda * Lambda * Lambda * Lambda * pow(varphi_bg, -sigma) ;
+    double V_prime_varphi = - 0.*sigma * Lambda * Lambda * Lambda * Lambda * pow(varphi_bg, -sigma-1.);
+    double V_ddprime_varphi = 0.*sigma * (sigma + 1.0) * Lambda * Lambda * Lambda * Lambda * pow(varphi_bg, -sigma-2.);
     double M_pl2 = .5/fourpiG;
     double gamma = (2./3./M_pl2) * (1. + f_varphi + 3.* M_pl2 *f_prime_varphi * f_prime_varphi/2.);
 
@@ -676,13 +678,16 @@ void update_V_pi(Field<FieldType> & phi, Field<FieldType> & phi_prime, Field<Fie
     double coeff_F =0.;
     if (non_linearity == 1) coeff_F = (f_prime_varphi/(3.*M_pl2*gamma)) * (1. + 3.*M_pl2*f_ddprime_varphi);
 
-    double coeff_G = (6.*M_pl2*f_prime_varphi*(Hcon*Hcon+H_prime) - 2.*a*a*V_prime_varphi + (1.+3.*M_pl2*f_ddprime_varphi)* (2.*varphi_prime_bg*varphi_prime_bg*f_prime_varphi)/(3.0*M_pl2*gamma));
+    double coeff_G = (6.*M_pl2*f_prime_varphi*(Hcon*Hcon+H_prime) - 2.*a*a*V_prime_varphi + (1.+3.*M_pl2*f_ddprime_varphi) * (2.*varphi_prime_bg*varphi_prime_bg*f_prime_varphi)/(3.0*M_pl2*gamma));
     double coeff_H = 0.;
 
     double Laplacian_pi, Laplacian_phi = 0., Gradpi_Gradpi=0.;
     Site x(phi.lattice());
     for (x.first(); x.test(); x.next())
       {
+        phi_prime = (phi(x)-phi_old(x))/dtau;
+        chi_prime = (chi(x)-chi_old(x))/dtau;
+
         Laplacian_pi= pi(x-0) + pi(x+0) - 2. * pi(x);
         Laplacian_pi+=pi(x+1) + pi(x-1) - 2. * pi(x);
         Laplacian_pi+=pi(x+2) + pi(x-2) - 2. * pi(x);
@@ -706,9 +711,14 @@ void update_V_pi(Field<FieldType> & phi, Field<FieldType> & phi_prime, Field<Fie
           }
 
 				V_pi(x) = (1. + coeff_C * dtau/2.) * V_pi(x)
-				+ coeff_D * pi(x) + coeff_E * Laplacian_pi + coeff_F * Gradpi_Gradpi + varphi_prime_bg *  (4. * phi_prime(x) - chi_prime(x)) + coeff_G * (phi(x) - chi(x)) + coeff_H * Laplacian_phi
+				+ coeff_D * pi(x)
+                + coeff_E * Laplacian_pi
+                + coeff_F * Gradpi_Gradpi
+                + varphi_prime_bg *  (4. * phi_prime - chi_prime)
+                + coeff_G * (phi(x) - chi(x))
+                + coeff_H * Laplacian_phi
 				+ a * a * f_prime_varphi/gamma/M_pl2/3. * TiimT00(x);
-        cout<<" (Hcon*Hcon) :  "<< (Hcon*Hcon) << " H_prime: " << H_prime <<"   ((f_prime_varphi*f_prime_varphi * (2.+3.* M_pl2 *f_ddprime_varphi) - 2.* f_ddprime_varphi * (1.+f_varphi))):"<<(f_prime_varphi*f_prime_varphi * (2.+3.* M_pl2 *f_ddprime_varphi) - 2.* f_ddprime_varphi * (1.+f_varphi)) <<"     coeff_D"<<coeff_D<<" V_pi(x) :"<<V_pi(x) <<endl;
+        //cout<<" (Hcon*Hcon) :  "<< (Hcon*Hcon) << " H_prime: " << H_prime <<"   ((f_prime_varphi*f_prime_varphi * (2.+3.* M_pl2 *f_ddprime_varphi) - 2.* f_ddprime_varphi * (1.+f_varphi))):"<<(f_prime_varphi*f_prime_varphi * (2.+3.* M_pl2 *f_ddprime_varphi) - 2.* f_ddprime_varphi * (1.+f_varphi)) <<"     coeff_D"<<coeff_D<<" V_pi(x) :"<<V_pi(x) <<endl;
         V_pi(x) /= (1. - coeff_C * dtau/2.);
       }
   }
