@@ -525,6 +525,19 @@ int main(int argc, char **argv)
   sprintf(filename, "%s%s_background.dat", sim.output_path, sim.basename_generic);
   outfile = fopen(filename, "w+");
   fclose(outfile);
+
+// TEST
+  // for (x.first(); x.test(); x.next())
+  //   {
+  //     // pi(x)= 0.0;
+  //      //* gsl_spline_eval(H_spline, 1.0, acc)/sqrt(2./3.*fourpiG); // phi has dimension of time so we multiply by H0_class/H_0 gevolution
+  //     V_pi(x)=0.0;
+  //   }
+  //   pi.updateHalo();  // communicate halo values
+  //   V_pi.updateHalo();  // communicate halo values
+
+
+
 	while (true)    // main loop
 	{
     for (x.first(); x.test(); x.next())
@@ -610,14 +623,6 @@ int main(int argc, char **argv)
 			}
 		}
 		projection_Tij_comm(&Sij);
-
-		// for (x.first(); x.test(); x.next()){
-		// //for(i=1,i++;i<4){
-		// //	for(j=1,j++;j<4){
-		// 		cout << endl;
-		// 		cout << source(x) << endl;
-		// 		cout << Sij(x,0,0) << ", " << Sij(x,1,1) <<  ", " << Sij(x,2,2) <<  ", " << Sij(x,3,3) << ", " << Sij(x,4,4) << endl;
-		// }
 
 #ifdef BENCHMARK
 		projection_time += MPI_Wtime() - cycle_start_time;
@@ -925,7 +930,6 @@ int main(int argc, char **argv)
  //Then we start the main loop V_pi is updated to get V_pi(n+1/2) from pi(n) and V_pi(n-1/2)
   for (i=0;i<sim.nq_numsteps;i++)
   {
-
       update_V_pi(phi, phi_old, chi, chi_old, pi, V_pi, TiimT00, source,
 			 gsl_spline_eval(quintessence.spline_mg_field,a_quintessence,quintessence.acc_mg_field),
 			 gsl_spline_eval(quintessence.spline_mg_field_p,a_quintessence,quintessence.acc_mg_field_p),

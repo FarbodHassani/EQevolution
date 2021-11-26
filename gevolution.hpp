@@ -661,13 +661,13 @@ void update_V_pi(Field<FieldType> & phi, Field<FieldType> & phi_old, Field<Field
   {
     double phi_prime, chi_prime;
 
-    double f_varphi = 0.*alpha * varphi_bg * varphi_bg;
-    double f_prime_varphi = 0.*2. * alpha * varphi_bg;
-    double f_ddprime_varphi = 0.*2. * alpha;
+    double f_varphi = alpha * varphi_bg * varphi_bg;
+    double f_prime_varphi = 2. * alpha * varphi_bg;
+    double f_ddprime_varphi = 2. * alpha;
     double f_dddprime_varphi = 0.;
-    double V_varphi = 0.*Lambda * Lambda * Lambda * Lambda * pow(varphi_bg, -sigma) ;
-    double V_prime_varphi = - 0.*sigma * Lambda * Lambda * Lambda * Lambda * pow(varphi_bg, -sigma-1.);
-    double V_ddprime_varphi = 0.*sigma * (sigma + 1.0) * Lambda * Lambda * Lambda * Lambda * pow(varphi_bg, -sigma-2.);
+    double V_varphi = Lambda * Lambda * Lambda * Lambda * pow(varphi_bg, -sigma) ;
+    double V_prime_varphi = - sigma * Lambda * Lambda * Lambda * Lambda * pow(varphi_bg, -sigma-1.);
+    double V_ddprime_varphi = sigma * (sigma + 1.0) * Lambda * Lambda * Lambda * Lambda * pow(varphi_bg, -sigma-2.);
     double M_pl2 = .5/fourpiG;
     double gamma = (2./3./M_pl2) * (1. + f_varphi + 3.* M_pl2 *f_prime_varphi * f_prime_varphi/2.);
 
@@ -692,6 +692,7 @@ void update_V_pi(Field<FieldType> & phi, Field<FieldType> & phi_old, Field<Field
         Laplacian_pi+=pi(x+1) + pi(x-1) - 2. * pi(x);
         Laplacian_pi+=pi(x+2) + pi(x-2) - 2. * pi(x);
         Laplacian_pi/= dx*dx;
+        cout<<"x:"<<x<<" Laplacian_pi: "<<Laplacian_pi<<endl;
 
         if (non_linearity == 1)
           {
@@ -710,16 +711,26 @@ void update_V_pi(Field<FieldType> & phi, Field<FieldType> & phi_old, Field<Field
             Gradpi_Gradpi/= dx * dx;
           }
 
-				V_pi(x) = (1. + coeff_C * dtau/2.) * V_pi(x)
-				+ coeff_D * pi(x)
-                + coeff_E * Laplacian_pi
-                + coeff_F * Gradpi_Gradpi
-                + varphi_prime_bg *  (4. * phi_prime - chi_prime)
-                + coeff_G * (phi(x) - chi(x))
-                + coeff_H * Laplacian_phi
-				+ a * a * f_prime_varphi/gamma/M_pl2/3. * TiimT00(x);
+				// V_pi(x) = (1. + coeff_C * dtau/2.) * V_pi(x)
+				// + coeff_D * pi(x)
+        //         + coeff_E * Laplacian_pi
+        //         + coeff_F * Gradpi_Gradpi
+        //         + varphi_prime_bg *  (4. * phi_prime - chi_prime)
+        //         + coeff_G * (phi(x) - chi(x))
+        //         + coeff_H * Laplacian_phi
+				// + a * a * f_prime_varphi/gamma/M_pl2/3. * TiimT00(x);
         //cout<<" (Hcon*Hcon) :  "<< (Hcon*Hcon) << " H_prime: " << H_prime <<"   ((f_prime_varphi*f_prime_varphi * (2.+3.* M_pl2 *f_ddprime_varphi) - 2.* f_ddprime_varphi * (1.+f_varphi))):"<<(f_prime_varphi*f_prime_varphi * (2.+3.* M_pl2 *f_ddprime_varphi) - 2.* f_ddprime_varphi * (1.+f_varphi)) <<"     coeff_D"<<coeff_D<<" V_pi(x) :"<<V_pi(x) <<endl;
-        V_pi(x) /= (1. - coeff_C * dtau/2.);
+        // V_pi(x) /= (1. - coeff_C * dtau/2.);
+
+
+//############### TEST:#############
+        V_pi(x) = V_pi(x)
+                + 1.0 * Laplacian_pi;
+        //         + coeff_F * Gradpi_Gradpi
+        //         + varphi_prime_bg *  (4. * phi_prime - chi_prime)
+        //         + coeff_G * (phi(x) - chi(x))
+        //         + coeff_H * Laplacian_phi
+        // + a * a * f_prime_varphi/gamma/M_pl2/3. * TiimT00(x);
       }
   }
 
