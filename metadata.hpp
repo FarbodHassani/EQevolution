@@ -303,8 +303,8 @@ struct mg_cosmology
 	double mg_alpha;
   double mg_Lambda;
   double mg_sigma;
-  double ic_vx;
-  double ic_vx_p;
+  double ic_phi;
+  double ic_phi_p;
 
   // Vector of background values to be filled with mg_import function
   std::vector<double> a_vec;

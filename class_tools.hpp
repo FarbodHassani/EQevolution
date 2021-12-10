@@ -183,7 +183,7 @@ void initializeCLASSstructures(metadata & sim, icsettings & ic, cosmology & cosm
   sprintf(class_filecontent.value[i++], "quintessence_extended");
   //
   sprintf(class_filecontent.name[i], "parameters_smg");
-  sprintf(class_filecontent.value[i++],"%e, %e, %e, %e, %e",quintessence.mg_sigma, quintessence.mg_Lambda, quintessence.mg_alpha, quintessence.ic_vx, quintessence.ic_vx_p);
+  sprintf(class_filecontent.value[i++],"%e, %e, %e, %e, %e",quintessence.mg_sigma, quintessence.mg_Lambda, quintessence.mg_alpha, quintessence.ic_phi, quintessence.ic_phi_p);
 
   sprintf(class_filecontent.name[i], "tuning_dxdy_guess_smg");
   sprintf(class_filecontent.value[i++], "%d", 1);
@@ -667,7 +667,7 @@ void loadBGFunctions(background & class_background, mg_cosmology & quintessence,
     parallel.abortForce();
   }
   background_output_data(&class_background, cols, data);
-  for(bg_size=0;data[bg_size*cols + zcol]>z_in * 1.1;bg_size++){};
+  for(bg_size=0;data[bg_size*cols + zcol]>z_in * 5.1;bg_size++){};
 
 	a = (double *) malloc(sizeof(double) * (class_background.bt_size-bg_size+num_points));
 	bg = (double *) malloc(sizeof(double) * (class_background.bt_size-bg_size+num_points));
