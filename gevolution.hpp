@@ -605,7 +605,6 @@ void prepareFTsource_Quintessence(Field<FieldType> & phi, Field<FieldType> & chi
 #endif
 
 
-
 //////////////////////////
 // Update quintessence field (pi)
 //////////////////////////
@@ -665,15 +664,13 @@ void update_V_pi(Field<FieldType> & phi, Field<FieldType> & phi_old, Field<Field
     double f_prime_varphi = 2. * alpha * varphi_bg;
     double f_ddprime_varphi = 2. * alpha;
     double f_dddprime_varphi = 0.;
-    double V_varphi = Lambda * Lambda * Lambda * Lambda * pow(varphi_bg, -sigma) ;
+    double V_varphi = Lambda * Lambda * Lambda * Lambda * pow(varphi_bg, -sigma);
     double V_prime_varphi = - sigma * Lambda * Lambda * Lambda * Lambda * pow(varphi_bg, -sigma-1.);
     double V_ddprime_varphi = sigma * (sigma + 1.0) * Lambda * Lambda * Lambda * Lambda * pow(varphi_bg, -sigma-2.);
     double M_pl2 = .5/fourpiG;
     double gamma = (2./3./M_pl2) * (1. + f_varphi + 3.* M_pl2 *f_prime_varphi * f_prime_varphi/2.);
-
     double coeff_C = -(2. * Hcon + 2. * (varphi_prime_bg * f_prime_varphi/ (3. * M_pl2 * gamma)) * (1.+3.* M_pl2 * f_ddprime_varphi) );
-
-    double coeff_D = - (1./gamma) * ( (Hcon*Hcon+H_prime) * (f_prime_varphi*f_prime_varphi * (2.+3.* M_pl2 *f_ddprime_varphi) - 2.* f_ddprime_varphi * (1.+f_varphi)) + (a*a/3./M_pl2) * (2.*V_ddprime_varphi * (1.+f_varphi)  -  f_prime_varphi*V_prime_varphi * (4.+3.* M_pl2 *f_ddprime_varphi) )  +  varphi_prime_bg * varphi_prime_bg * f_prime_varphi * f_dddprime_varphi);
+    double coeff_D = - (1./gamma) * ( (Hcon*Hcon+H_prime) * (f_prime_varphi*f_prime_varphi * (2.+3.* M_pl2 *f_ddprime_varphi) - 2.* f_ddprime_varphi * (1.+f_varphi))+ (a*a/3./M_pl2) * (2.*V_ddprime_varphi * (1.+f_varphi)  -  f_prime_varphi*V_prime_varphi * (4.+3.* M_pl2 *f_ddprime_varphi) )  +  varphi_prime_bg * varphi_prime_bg * f_prime_varphi * f_dddprime_varphi);
     double coeff_E = 1.;
     double coeff_F =0.;
     if (non_linearity == 1) coeff_F = (f_prime_varphi/(3.*M_pl2*gamma)) * (1. + 3.*M_pl2*f_ddprime_varphi);
@@ -692,7 +689,6 @@ void update_V_pi(Field<FieldType> & phi, Field<FieldType> & phi_old, Field<Field
         Laplacian_pi+=pi(x+1) + pi(x-1) - 2. * pi(x);
         Laplacian_pi+=pi(x+2) + pi(x-2) - 2. * pi(x);
         Laplacian_pi/= dx*dx;
-        cout<<"x:"<<x<<" Laplacian_pi: "<<Laplacian_pi<<endl;
 
         if (non_linearity == 1)
           {
@@ -711,29 +707,17 @@ void update_V_pi(Field<FieldType> & phi, Field<FieldType> & phi_old, Field<Field
             Gradpi_Gradpi/= dx * dx;
           }
 
-				// V_pi(x) = (1. + coeff_C * dtau/2.) * V_pi(x)
-				// + coeff_D * pi(x)
-        //         + coeff_E * Laplacian_pi
-        //         + coeff_F * Gradpi_Gradpi
-        //         + varphi_prime_bg *  (4. * phi_prime - chi_prime)
-        //         + coeff_G * (phi(x) - chi(x))
-        //         + coeff_H * Laplacian_phi
-				// + a * a * f_prime_varphi/gamma/M_pl2/3. * TiimT00(x);
-        //cout<<" (Hcon*Hcon) :  "<< (Hcon*Hcon) << " H_prime: " << H_prime <<"   ((f_prime_varphi*f_prime_varphi * (2.+3.* M_pl2 *f_ddprime_varphi) - 2.* f_ddprime_varphi * (1.+f_varphi))):"<<(f_prime_varphi*f_prime_varphi * (2.+3.* M_pl2 *f_ddprime_varphi) - 2.* f_ddprime_varphi * (1.+f_varphi)) <<"     coeff_D"<<coeff_D<<" V_pi(x) :"<<V_pi(x) <<endl;
-        // V_pi(x) /= (1. - coeff_C * dtau/2.);
-
-
-//############### TEST:#############
-        V_pi(x) = V_pi(x)
-                + 1.0 * Laplacian_pi;
-        //         + coeff_F * Gradpi_Gradpi
-        //         + varphi_prime_bg *  (4. * phi_prime - chi_prime)
-        //         + coeff_G * (phi(x) - chi(x))
-        //         + coeff_H * Laplacian_phi
-        // + a * a * f_prime_varphi/gamma/M_pl2/3. * TiimT00(x);
+          V_pi(x) = (1. + coeff_C * dtau/2.) * V_pi(x)
+  				+ (dtau/2.) * (coeff_D * pi(x)
+                  + coeff_E * Laplacian_pi
+                  + coeff_F * Gradpi_Gradpi
+                  + varphi_prime_bg *  (4. * phi_prime - chi_prime)
+                  + coeff_G * (phi(x) - chi(x))
+                  + coeff_H * Laplacian_phi
+  				+ a * a * f_prime_varphi/gamma/M_pl2/3. * TiimT00(x));
+          V_pi(x) /= (1. - coeff_C * dtau/2.);
       }
   }
-
 
 #ifdef FFT3D
 //////////////////////////
