@@ -1767,16 +1767,17 @@ void generateIC_basic(metadata & sim, icsettings & ic, cosmology & cosmo, mg_cos
  loadTransferFunctions(class_background, class_perturbs, quintessence, tk_d_mg, tk_t_mg, "vx", sim.boxsize, sim.z_in, cosmo.h);
  npts = tk_d_mg->size;
  k_mg = (double *) malloc (npts * sizeof(double));
- scalar_field = (double *) malloc(npts * sizeof(double)); // v_x = a* delta phi/phi' [T]// v_x_prime is dimensionless, scalar_field [1/T], scalar_field_prime [1/T^2].
- scalar_field_prime = (double *) malloc(npts * sizeof(double));
+ scalar_field = (double *) malloc(npts * sizeof(double)); // v_x = a* delta phi/phi' [T]// v_x_prime has dimension of [1], scalar_field [1], scalar_field_prime [1/T].
+ scalar_field_prime = (double *) malloc(npts * sizeof(double)); // delta phi_prime = [1/T]
  for (i = 0; i < npts; i++)
  {
    k_mg[i] = tk_d_mg -> x[i];
 
-   delta_phi = tk_d_mg->y[i] * (H0_hiclass/H0_gev) * (mg_field_prime/a); //Eq. 2.16 of 1605.06102
+   delta_phi = tk_d_mg->y[i] * (mg_field_prime/a) * (H0_hiclass/H0_gev) ; //Eq. 2.16 of 1605.06102, T_v_smg * mg_field_prime is dimensionless, the factor is because of mg_field_prime being in gevolution units.
    scalar_field[i] =  - M_PI * delta_phi * sqrt(Pk_primordial(tk_d_mg->x[i] * cosmo.h / sim.boxsize, ic)/ tk_d_mg->x[i])  / tk_d_mg->x[i];
+   scalar_field_prime[i] = ((mg_field_prime)) * M_PI *  sqrt( Pk_primordial(tk_t_mg->x[i] * cosmo.h / sim.boxsize, ic)/ tk_t_mg->x[i])/ tk_t_mg->x[i];
 
-   scalar_field_prime[i] = - (M_PI/a) * (tk_t_mg->y[i] * mg_field_prime  + tk_d_mg->y[i] * (H0_hiclass/H0_gev)  *  ( -Hconf_quintessence * mg_field_prime  + mg_field_prime_prime )) * sqrt( Pk_primordial(tk_t_mg->x[i] * cosmo.h / sim.boxsize, ic)/ tk_t_mg->x[i])/ tk_t_mg->x[i];
+   //- (M_PI/a)   * (tk_t_mg->y[i] * mg_field_prime   + tk_d_mg->y[i]  *  ( -Hconf_quintessence * mg_field_prime  + mg_field_prime_prime )) * sqrt( Pk_primordial(tk_t_mg->x[i] * cosmo.h / sim.boxsize, ic)/ tk_t_mg->x[i])/ tk_t_mg->x[i];
  }
  // Field realization
  gsl_spline_free(tk_d_mg);

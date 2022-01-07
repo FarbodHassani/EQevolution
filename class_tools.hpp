@@ -633,13 +633,14 @@ void loadBGFunctions(background & class_background, mg_cosmology & quintessence,
       if (strncmp(ptr, "conf. time [Mpc]", strlen("conf. time [Mpc]")) == 0) bgcol = cols;
       else if (strncmp(ptr, zname, strlen(zname)) == 0) zcol = cols;
     }
-    else if (strncmp(qname,"phi\'\'",strlen("phi\'\'")) == 0)
-    {
-      if (strncmp(ptr, "phi\'\'", strlen("phi\'\'")) == 0) bgcol = cols;
-      else if (strncmp(ptr, "phi\'", strlen("phi\'")) ==0) bgcol2 = cols;
-      else if (strncmp(ptr, zname, strlen(zname)) == 0) zcol = cols;
-      // if(bgcol2==bgcol)
-    }
+    // else if (strncmp(qname,"phi\'\'",strlen("phi\'\'")) == 0)
+    // {
+    //   if (strncmp(ptr, "phi_smg_prime_prime", strlen("phi\'\'")) == 0) bgcol = cols;
+    //   else if (strncmp(ptr, "phi\'", strlen("phi\'")) ==0) bgcol2 = cols;
+    //   else if (strncmp(ptr, zname, strlen(zname)) == 0) zcol = cols;
+    //   // if(bgcol2==bgcol)
+    // }
+
     // Todo: Think about ncdm/ rho_ur part!
 
     else
@@ -650,10 +651,10 @@ void loadBGFunctions(background & class_background, mg_cosmology & quintessence,
 		cols++;
     ptr = strtok(NULL, _DELIMITER_);
     }
-    if (strncmp(qname,"phi\'",strlen("phi\'")) == 0 && bgcol2<0)
-    {
-      bgcol = bgcol-1;
-    }
+    // if (strncmp(qname,"phi\'",strlen("phi\'")) == 0 && bgcol2<0)
+    // {
+    //   bgcol = bgcol-1;
+    // }
 
 	if (zcol < 0 || bgcol < 0 || ((strncmp(qname,"H_prime",strlen("H_prime")) == 0) && bgcol2 < 0) || ((strncmp(qname,"w_mg",strlen("w_mg")) == 0) && bgcol2 < 0) || ((strncmp(qname,"Omega_m",strlen("Omega_m")) == 0) && bgcol2 < 0 && bgcol3 < 0) || ((strncmp(qname,"Omega_rad",strlen("Omega_rad")) == 0) && bgcol2 < 0) || ((strncmp(qname,"Omega_mg",strlen("Omega_mg")) == 0) && bgcol2 < 0))
 	{
@@ -714,15 +715,14 @@ void loadBGFunctions(background & class_background, mg_cosmology & quintessence,
     {
       bg[i-bg_size] *=  2./3./ sqrt(fourpiG) * data[(class_background.bt_size-1)*cols + Hcol];
     }
-    else if (strncmp(qname,"phi_smg",strlen("phi_smg")) == 0)
+    else if (strncmp(qname,"phi_prime_smg",strlen("phi_prime_smg")) == 0) //phi is defined to be dimensionless refer to David's paper where we have (phi/phi_*), so we keep it like that.
     {
-      bg[i-bg_size] /=  (sqrt(2.*fourpiG/3.)/data[(class_background.bt_size-1)*cols + Hcol]); //H0 in gevolution sqrt(2.*fourpiG/3.)
+      bg[i-bg_size] *=  (sqrt(2.*fourpiG/3.)/data[(class_background.bt_size-1)*cols + Hcol]);
     }
-    else if (strncmp(qname,"phi\'\'",strlen("phi\'\'")) == 0)
+    else if (strncmp(qname,"phi_prime_prime_smg",strlen("phi_prime_prime_smg")) == 0)
     {
-      bg[i-bg_size] *=  (sqrt(2.*fourpiG/3.)/data[(class_background.bt_size-1)*cols + Hcol]) ;
+      bg[i-bg_size] *=  (sqrt(2.*fourpiG/3.)/data[(class_background.bt_size-1)*cols + Hcol]) * (sqrt(2.*fourpiG/3.)/data[(class_background.bt_size-1)*cols + Hcol]) ;
     }
-
     if (i > bg_size)
       {
         if (a[i-bg_size] < a[i-bg_size-1])

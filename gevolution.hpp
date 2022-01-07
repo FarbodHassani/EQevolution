@@ -659,7 +659,6 @@ template <class FieldType>
 void update_V_pi(Field<FieldType> & phi, Field<FieldType> & phi_old, Field<FieldType> & chi, Field<FieldType> & chi_old, Field<FieldType> & pi, Field<FieldType> & V_pi, Field<FieldType> & TiimT00, Field<FieldType> & source, const double varphi_bg, const double varphi_prime_bg, const double alpha, const double Lambda, const double sigma, const double Hcon, const double H_prime, const double fourpiG, const double a, const double dx, const double dtau, int non_linearity)
   {
     double phi_prime, chi_prime;
-
     double f_varphi = alpha * varphi_bg * varphi_bg;
     double f_prime_varphi = 2. * alpha * varphi_bg;
     double f_ddprime_varphi = 2. * alpha;

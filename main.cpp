@@ -349,8 +349,8 @@ int main(int argc, char **argv)
   loadBGFunctions(class_background, quintessence, quintessence.spline_Omega_mg,quintessence.acc_Omega_mg,"Omega_mg",sim.z_in, fourpiG);
   loadBGFunctions(class_background, quintessence, quintessence.spline_particleHorizon,quintessence.acc_particleHorizon,"conf. time [Mpc]",sim.z_in, fourpiG);
   loadBGFunctions(class_background, quintessence, quintessence.spline_mg_field,quintessence.acc_mg_field,"phi_smg",sim.z_in, fourpiG);
-  loadBGFunctions(class_background, quintessence, quintessence.spline_mg_field_p,quintessence.acc_mg_field_p,"phi\'",sim.z_in, fourpiG);
-  loadBGFunctions(class_background, quintessence, quintessence.spline_mg_field_pp,quintessence.acc_mg_field_pp,"phi\'\'",sim.z_in, fourpiG);
+  loadBGFunctions(class_background, quintessence, quintessence.spline_mg_field_p,quintessence.acc_mg_field_p,"phi_prime_smg",sim.z_in, fourpiG);
+  loadBGFunctions(class_background, quintessence, quintessence.spline_mg_field_pp,quintessence.acc_mg_field_pp,"phi_prime_prime_smg",sim.z_in, fourpiG);
   loadBGFunctions(class_background, quintessence, quintessence.spline_a,quintessence.acc_a,"scale factor",sim.z_in, fourpiG);
   #else
   COUT << " Quintessence background from hiclass requested while CLASS is not defined: an error occurred while importing background data." << endl;
@@ -419,7 +419,7 @@ int main(int argc, char **argv)
 
 	//Quintessence
 	double alpha = quintessence.mg_alpha;
-	double Lambda = quintessence.mg_Lambda * pow(2.*fourpiG/3.,0.25);
+	double Lambda = quintessence.mg_Lambda * pow(2.*fourpiG/3.,0.25);//Lambda is dimensionful so we convert to gevolution's units.
 	double sigma = quintessence.mg_sigma;
   double mg_field = gsl_spline_eval(quintessence.spline_mg_field, a, quintessence.acc_mg_field);
   double mg_field_prime = gsl_spline_eval(quintessence.spline_mg_field_p, a, quintessence.acc_mg_field_p);
@@ -645,8 +645,8 @@ int main(int argc, char **argv)
 
 			if (dtau_old > 0.)
 			{
-				prepareFTsource<Real>(phi, chi, source, cosmo.Omega_cdm + cosmo.Omega_b + bg_ncdm(a, cosmo), source, 3. * Hconf(a, fourpiG, cosmo) * dx * dx / dtau_old, fourpiG * dx * dx / a, 3. * Hconf(a, fourpiG, cosmo) * Hconf(a, fourpiG, cosmo) * dx * dx);  // prepare nonlinear source for phi update
-        // prepareFTsource_Quintessence(phi, chi, source, cosmo.Omega_cdm + cosmo.Omega_b + bg_ncdm(a, cosmo), source, pi, V_pi, mg_field, mg_field_prime, alpha, Lambda, sigma, Hconf_quintessence, fourpiG, a, dx, dtau_old, quintessence.NL_quintessence); // prepare nonlinear source for phi update using extended quintessence expressions
+				// prepareFTsource<Real>(phi, chi, source, cosmo.Omega_cdm + cosmo.Omega_b + bg_ncdm(a, cosmo), source, 3. * Hconf(a, fourpiG, cosmo) * dx * dx / dtau_old, fourpiG * dx * dx / a, 3. * Hconf(a, fourpiG, cosmo) * Hconf(a, fourpiG, cosmo) * dx * dx);  // prepare nonlinear source for phi update
+        prepareFTsource_Quintessence(phi, chi, source, cosmo.Omega_cdm + cosmo.Omega_b + bg_ncdm(a, cosmo), source, pi, V_pi, mg_field, mg_field_prime, alpha, Lambda, sigma, Hconf_quintessence, fourpiG, a, dx, dtau_old, quintessence.NL_quintessence); // prepare nonlinear source for phi update using extended quintessence expressions
 
 #ifdef BENCHMARK
 				ref2_time= MPI_Wtime();
@@ -657,8 +657,8 @@ int main(int argc, char **argv)
 				fft_count++;
 #endif
 
-				solveModifiedPoissonFT(scalarFT, scalarFT, 1. / (dx * dx), 3. * Hconf(a, fourpiG, cosmo) / dtau_old);  // phi update (k-space)
-        // solveModifiedPoissonFT_quintessence (scalarFT, scalarFT, 1. / (dx * dx), mg_field, mg_field_prime, alpha, Hconf_quintessence, dtau_old);
+				// solveModifiedPoissonFT(scalarFT, scalarFT, 1. / (dx * dx), 3. * Hconf(a, fourpiG, cosmo) / dtau_old);  // phi update (k-space)
+        solveModifiedPoissonFT_quintessence (scalarFT, scalarFT, 1. / (dx * dx), mg_field, mg_field_prime, alpha, Hconf_quintessence, dtau_old);
 
 
 #ifdef BENCHMARK
@@ -707,8 +707,8 @@ int main(int argc, char **argv)
 			else
 			{
 				if (cycle == 0)
-					fprintf(outfile, "# background statistics\n# cycle   tau/boxsize    a             conformal H/H0   scalar(phi)*H0   scalar_p  scalar_pp/H0     phi(k=0)       T00(k=0)\n");
-				fprintf(outfile, " %6d   %e   %e   %e   %e   %e   %e   %e   %e\n", cycle, tau, a, Hconf_quintessence / gsl_spline_eval(quintessence.spline_H, 1., quintessence.acc_H), mg_field*gsl_spline_eval(quintessence.spline_H, 1., quintessence.acc_H), mg_field_prime, mg_field_prime_prime/gsl_spline_eval(quintessence.spline_H, 1., quintessence.acc_H), scalarFT(kFT).real(), T00hom);
+					fprintf(outfile, "# background statistics\n# cycle   tau/boxsize    a             conformal H/H0   scalar(phi)   scalar_p/H0 scalar_pp/H0^2     phi(k=0)       T00(k=0)\n");
+				fprintf(outfile, " %6d   %e   %e   %e   %e   %e   %e   %e   %e\n", cycle, tau, a, Hconf_quintessence / gsl_spline_eval(quintessence.spline_H, 1., quintessence.acc_H), mg_field, mg_field_prime/gsl_spline_eval(quintessence.spline_H, 1., quintessence.acc_H), mg_field_prime_prime/gsl_spline_eval(quintessence.spline_H, 1., quintessence.acc_H)/gsl_spline_eval(quintessence.spline_H, 1., quintessence.acc_H), scalarFT(kFT).real(), T00hom);
 				fclose(outfile);
 			}
 		}

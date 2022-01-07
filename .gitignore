@@ -26,3 +26,5 @@ makefile
 output/lcdm_pk002_delta.dat
 output/lcdm_pk001_delta.dat
 output/lcdm_pk000_delta.dat
+*.dat
+Notebook/.ipynb_checkpoints/Quintessence-checkpoint.ipynb
