@@ -114,6 +114,7 @@ int main(int argc, char **argv)
 	cosmology cosmo;
 	// quintessence
 	mg_cosmology quintessence;
+  double phi_bg, phi_p_bg, phi_pp_bg, V_prime_varphi;
 	icsettings ic;
 	double T00hom;
 
@@ -434,7 +435,7 @@ int main(int argc, char **argv)
 
 	if( (Hconf(a, fourpiG, cosmo) - Hconf_quintessence)/Hconf(a, fourpiG, cosmo) > 0.1 )
 	{
-		COUT << " Quintessence WARNING: It seems that the background is very different from LambdaCDM at z_in." << endl;
+		COUT << " Quintessence WARNING: It seems that the tau/boxsize is very different from LambdaCDM at z_in." << endl;
 	}
 
 	COUT << endl;
@@ -526,17 +527,8 @@ int main(int argc, char **argv)
   outfile = fopen(filename, "w+");
   fclose(outfile);
 
-// TEST
-  // for (x.first(); x.test(); x.next())
-  //   {
-  //     // pi(x)= 0.0;
-  //      //* gsl_spline_eval(H_spline, 1.0, acc)/sqrt(2./3.*fourpiG); // phi has dimension of time so we multiply by H0_class/H_0 gevolution
-  //     V_pi(x)=0.0;
-  //   }
-  //   pi.updateHalo();  // communicate halo values
-  //   V_pi.updateHalo();  // communicate halo values
-
-
+  phi_bg = gsl_spline_eval(quintessence.spline_mg_field, a, quintessence.acc_mg_field) *  gsl_spline_eval(quintessence.spline_H,1.,quintessence.acc_H);
+  phi_p_bg = gsl_spline_eval(quintessence.spline_mg_field_p, a, quintessence.acc_mg_field_p) * gsl_spline_eval(quintessence.spline_H,1.,quintessence.acc_H) *  gsl_spline_eval(quintessence.spline_H,1.,quintessence.acc_H);
 
 	while (true)    // main loop
 	{
@@ -645,8 +637,8 @@ int main(int argc, char **argv)
 
 			if (dtau_old > 0.)
 			{
-				// prepareFTsource<Real>(phi, chi, source, cosmo.Omega_cdm + cosmo.Omega_b + bg_ncdm(a, cosmo), source, 3. * Hconf(a, fourpiG, cosmo) * dx * dx / dtau_old, fourpiG * dx * dx / a, 3. * Hconf(a, fourpiG, cosmo) * Hconf(a, fourpiG, cosmo) * dx * dx);  // prepare nonlinear source for phi update
-        prepareFTsource_Quintessence(phi, chi, source, cosmo.Omega_cdm + cosmo.Omega_b + bg_ncdm(a, cosmo), source, pi, V_pi, mg_field, mg_field_prime, alpha, Lambda, sigma, Hconf_quintessence, fourpiG, a, dx, dtau_old, quintessence.NL_quintessence); // prepare nonlinear source for phi update using extended quintessence expressions
+				prepareFTsource<Real>(phi, chi, source, cosmo.Omega_cdm + cosmo.Omega_b + bg_ncdm(a, cosmo), source, 3. * Hconf(a, fourpiG, cosmo) * dx * dx / dtau_old, fourpiG * dx * dx / a, 3. * Hconf(a, fourpiG, cosmo) * Hconf(a, fourpiG, cosmo) * dx * dx);  // prepare nonlinear source for phi update
+        // prepareFTsource_Quintessence(phi, chi, source, cosmo.Omega_cdm + cosmo.Omega_b + bg_ncdm(a, cosmo), source, pi, V_pi, mg_field, mg_field_prime, alpha, Lambda, sigma, Hconf_quintessence, fourpiG, a, dx, dtau_old, quintessence.NL_quintessence); // prepare nonlinear source for phi update using extended quintessence expressions
 
 #ifdef BENCHMARK
 				ref2_time= MPI_Wtime();
@@ -657,8 +649,8 @@ int main(int argc, char **argv)
 				fft_count++;
 #endif
 
-				// solveModifiedPoissonFT(scalarFT, scalarFT, 1. / (dx * dx), 3. * Hconf(a, fourpiG, cosmo) / dtau_old);  // phi update (k-space)
-        solveModifiedPoissonFT_quintessence (scalarFT, scalarFT, 1. / (dx * dx), mg_field, mg_field_prime, alpha, Hconf_quintessence, dtau_old);
+				solveModifiedPoissonFT(scalarFT, scalarFT, 1. / (dx * dx), 3. * Hconf(a, fourpiG, cosmo) / dtau_old);  // phi update (k-space)
+        // solveModifiedPoissonFT_quintessence (scalarFT, scalarFT, 1. / (dx * dx), mg_field, mg_field_prime, alpha, Hconf_quintessence, dtau_old);
 
 
 #ifdef BENCHMARK
@@ -699,6 +691,11 @@ int main(int argc, char **argv)
 		// record some background data
 		if (kFT.setCoord(0, 0, 0))
 		{
+      phi_bg = phi_bg + dtau * phi_p_bg;
+      V_prime_varphi = - sigma * Lambda * Lambda * Lambda * Lambda * pow(phi_bg/gsl_spline_eval(quintessence.spline_H,1.,quintessence.acc_H), -sigma-1.) * gsl_spline_eval(quintessence.spline_H,1.,quintessence.acc_H);
+      phi_pp_bg = -2 * Hconf_quintessence * phi_p_bg - a*a * V_prime_varphi + 3/(2.*fourpiG)* (Hconf_quintessence*Hconf_quintessence + Hconf_prime_quintessence) * 2. * alpha * phi_bg;
+      phi_p_bg = phi_p_bg + dtau * phi_pp_bg;
+
 			outfile = fopen(filename, "a");
 			if (outfile == NULL)
 			{
@@ -707,8 +704,8 @@ int main(int argc, char **argv)
 			else
 			{
 				if (cycle == 0)
-					fprintf(outfile, "# background statistics\n# cycle   tau/boxsize    a             conformal H/H0   scalar(phi)   scalar_p/H0 scalar_pp/H0^2     phi(k=0)       T00(k=0)\n");
-				fprintf(outfile, " %6d   %e   %e   %e   %e   %e   %e   %e   %e\n", cycle, tau, a, Hconf_quintessence / gsl_spline_eval(quintessence.spline_H, 1., quintessence.acc_H), mg_field, mg_field_prime/gsl_spline_eval(quintessence.spline_H, 1., quintessence.acc_H), mg_field_prime_prime/gsl_spline_eval(quintessence.spline_H, 1., quintessence.acc_H)/gsl_spline_eval(quintessence.spline_H, 1., quintessence.acc_H), scalarFT(kFT).real(), T00hom);
+					fprintf(outfile, "# background statistics\n# 0: cycle   1: tau/boxsize    2: a             3: conformal H/H0   4: scalar(phi)   5: scalar_p/H0   6: scalar_pp/H0^2    7: phi_bg(gevolution)   8: phi_prime_bg(gevolution)      9: phi(k=0)       10: T00(k=0)\n");
+				fprintf(outfile, " %6d   %e   %e   %e   %e    %e   %e    %e   %e    %e    %e\n", cycle, tau, a, Hconf_quintessence / gsl_spline_eval(quintessence.spline_H, 1., quintessence.acc_H), mg_field, mg_field_prime/gsl_spline_eval(quintessence.spline_H, 1., quintessence.acc_H), mg_field_prime_prime/gsl_spline_eval(quintessence.spline_H, 1., quintessence.acc_H)/gsl_spline_eval(quintessence.spline_H, 1., quintessence.acc_H), phi_bg/gsl_spline_eval(quintessence.spline_H,1.,quintessence.acc_H), phi_p_bg/gsl_spline_eval(quintessence.spline_H,1.,quintessence.acc_H)/gsl_spline_eval(quintessence.spline_H,1.,quintessence.acc_H), scalarFT(kFT).real(), T00hom);
 				fclose(outfile);
 			}
 		}
