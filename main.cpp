@@ -527,8 +527,9 @@ int main(int argc, char **argv)
   outfile = fopen(filename, "w+");
   fclose(outfile);
 
-  phi_bg = gsl_spline_eval(quintessence.spline_mg_field, a, quintessence.acc_mg_field) *  gsl_spline_eval(quintessence.spline_H,1.,quintessence.acc_H);
-  phi_p_bg = gsl_spline_eval(quintessence.spline_mg_field_p, a, quintessence.acc_mg_field_p) * gsl_spline_eval(quintessence.spline_H,1.,quintessence.acc_H) *  gsl_spline_eval(quintessence.spline_H,1.,quintessence.acc_H);
+  phi_bg = gsl_spline_eval(quintessence.spline_mg_field, a, quintessence.acc_mg_field);
+  // /gsl_spline_eval(quintessence.spline_H,1.,quintessence.acc_H);
+  phi_p_bg = gsl_spline_eval(quintessence.spline_mg_field_p, a, quintessence.acc_mg_field_p);
 
 	while (true)    // main loop
 	{
@@ -691,11 +692,6 @@ int main(int argc, char **argv)
 		// record some background data
 		if (kFT.setCoord(0, 0, 0))
 		{
-      phi_bg = phi_bg + dtau * phi_p_bg;
-      V_prime_varphi = - sigma * Lambda * Lambda * Lambda * Lambda * pow(phi_bg/gsl_spline_eval(quintessence.spline_H,1.,quintessence.acc_H), -sigma-1.) * gsl_spline_eval(quintessence.spline_H,1.,quintessence.acc_H);
-      phi_pp_bg = -2 * Hconf_quintessence * phi_p_bg - a*a * V_prime_varphi + 3/(2.*fourpiG)* (Hconf_quintessence*Hconf_quintessence + Hconf_prime_quintessence) * 2. * alpha * phi_bg;
-      phi_p_bg = phi_p_bg + dtau * phi_pp_bg;
-
 			outfile = fopen(filename, "a");
 			if (outfile == NULL)
 			{
@@ -705,9 +701,17 @@ int main(int argc, char **argv)
 			{
 				if (cycle == 0)
 					fprintf(outfile, "# background statistics\n# 0: cycle   1: tau/boxsize    2: a             3: conformal H/H0   4: scalar(phi)   5: scalar_p/H0   6: scalar_pp/H0^2    7: phi_bg(gevolution)   8: phi_prime_bg(gevolution)      9: phi(k=0)       10: T00(k=0)\n");
-				fprintf(outfile, " %6d   %e   %e   %e   %e    %e   %e    %e   %e    %e    %e\n", cycle, tau, a, Hconf_quintessence / gsl_spline_eval(quintessence.spline_H, 1., quintessence.acc_H), mg_field, mg_field_prime/gsl_spline_eval(quintessence.spline_H, 1., quintessence.acc_H), mg_field_prime_prime/gsl_spline_eval(quintessence.spline_H, 1., quintessence.acc_H)/gsl_spline_eval(quintessence.spline_H, 1., quintessence.acc_H), phi_bg/gsl_spline_eval(quintessence.spline_H,1.,quintessence.acc_H), phi_p_bg/gsl_spline_eval(quintessence.spline_H,1.,quintessence.acc_H)/gsl_spline_eval(quintessence.spline_H,1.,quintessence.acc_H), scalarFT(kFT).real(), T00hom);
+				fprintf(outfile, " %6d   %e   %e   %e   %e    %e   %e    %e   %e    %e    %e\n", cycle, tau, a, Hconf_quintessence / gsl_spline_eval(quintessence.spline_H, 1., quintessence.acc_H), mg_field, mg_field_prime/gsl_spline_eval(quintessence.spline_H, 1., quintessence.acc_H), mg_field_prime_prime/gsl_spline_eval(quintessence.spline_H, 1., quintessence.acc_H)/gsl_spline_eval(quintessence.spline_H, 1., quintessence.acc_H), phi_bg * gsl_spline_eval(quintessence.spline_H,1.,quintessence.acc_H), phi_p_bg, scalarFT(kFT).real(), T00hom);
 				fclose(outfile);
 			}
+
+      phi_p_bg = phi_p_bg + dtau * phi_pp_bg;
+      V_prime_varphi = - sigma * Lambda * Lambda * Lambda * Lambda * pow(phi_bg, -sigma-1.);
+      // V_prime_varphi = - sigma * Lambda * Lambda * Lambda * Lambda * pow(phi_bg * gsl_spline_eval(quintessence.spline_H,1.,quintessence.acc_H), -sigma-1.) * gsl_spline_eval(quintessence.spline_H,1.,quintessence.acc_H);
+      // phi_pp_bg = -2 * Hconf_quintessence * phi_p_bg- a*a * V_prime_varphi + 3/(2.*fourpiG)* (Hconf_quintessence*Hconf_quintessence + Hconf_prime_quintessence) * 2. * alpha * phi_bg * gsl_spline_eval(quintessence.spline_H,1.,quintessence.acc_H) * gsl_spline_eval(quintessence.spline_H,1.,quintessence.acc_H);
+      phi_pp_bg = -2 * gsl_spline_eval(quintessence.spline_H, a, quintessence.acc_H) * phi_p_bg- a*a * V_prime_varphi + 3/(1.)* (gsl_spline_eval(quintessence.spline_H, a, quintessence.acc_H)* gsl_spline_eval(quintessence.spline_H, a, quintessence.acc_H) + gsl_spline_eval(quintessence.spline_H_prime, a, quintessence.acc_H_prime)) * 2. * alpha * phi_bg;
+
+      phi_bg = phi_bg + dtau * phi_p_bg;
 		}
 		// done recording background data
 		// prepareFTsource<Real>(phi, Sij, Sij, 2. * fourpiG * dx * dx / a);  // prepare nonlinear source for additional equations

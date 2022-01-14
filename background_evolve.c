@@ -15,7 +15,7 @@
 
 // INITIAL CONDITIONS
 // Initial value of the scale factor
-double a_init = 1e-14;
+double a_init = 1./(1+1.e14);
 // Final value of the scale factor
 double a_end = 1.1;
 
@@ -39,7 +39,7 @@ int T_CONF = 1;
 // COMPUTATION PARAMETERS VALUES
 
 // Number of points used in the computation
-int points = (int) 1e6;
+int points = (int) 5e5;
 // Max particle horizon value
 double max_tau = 40.;
 // Min particle horizon value
@@ -66,8 +66,8 @@ double bisection_min = 0.;
 double bisection_max = 20.;
 
 // Initial conditions (considered accordingly to the bisection_type choice)
-double mg_field_bk_0 = 1e-20;
-double mg_field_p_bk_0 = 1.;
+double mg_field_bk_0 = 1e-20 ;
+double mg_field_p_bk_0 = 1.6;
 
 // TEST MODE
 // Provides some informations on the terminal and the .csv file during the computation (1: on, others: off)
@@ -88,13 +88,13 @@ double mg_pot(const double mg_field_bk) {
 
 double mg_pot_p(const double mg_field_bk) {
 
-  return - mg_pot_exp * mg_pot_const * pow(mg_field_bk, - mg_pot_exp - 1.);
+  return - mg_pot_exp  * mg_pot_const * pow(mg_field_bk, - mg_pot_exp - 1.);
 
 }
 
 // Definition of the COUPLING FUNCION
 // For a list of the models see above
-double mg_coupl_const = -0.1; // 0 for LambdaCDM
+double mg_coupl_const = 0.1; // 0 for LambdaCDM
 
 
 double mg_coupl(const double mg_field_bk) {
@@ -185,8 +185,9 @@ void csv(double * t, double * a, double * a_p, double * mg_field_bk, double * mg
     fprintf(fp, "%s, %s, %s, %s, %s, %s, %s, %s", "t", "a(t)", "H(t)/H0", "H_prime(t)/H0^2", "Omega_df", "Omega_r", "Omega_b", "Omega_cdm");
     fprintf(fp, ", %s", "omega_df");
     fprintf(fp, ", %s", "PH"); // Particle horizon
-    fprintf(fp, ", %s", "mg_field");
-    fprintf(fp, ", %s", "mg_field_p");
+    fprintf(fp, ", %s", "mg_field[1]");
+    fprintf(fp, ", %s", "mg_field_p[H0]");
+    fprintf(fp, ", %s", "mg_field_pp[H0^2]");
     if(TEST_MODE==1) fprintf(fp, ", %s", "H_check(t)/H0");
     fprintf(fp, "\n");
 
@@ -247,6 +248,7 @@ void csv(double * t, double * a, double * a_p, double * mg_field_bk, double * mg
 
       fprintf(fp, ", %e", mg_field_bk[i]);
       fprintf(fp, ", %e", mg_field_p_bk[i]);
+      fprintf(fp, ", %e", mg_field_bk_pp_rk4(a[i], a_p[i], mg_field_bk[i], mg_field_p_bk[i]));
 
       if(TEST_MODE==1){
 
@@ -511,7 +513,7 @@ int main() {
     a[0] = a_init;
 
     mg_field_bk[0] = mg_field_bk_0;
-    mg_field_p_bk[0] = mg_field_p_bk_0;
+    mg_field_p_bk[0] = mg_field_p_bk_0; //*  1. * _H0_/(_c_/1000.0);
 
     printf("\n Extended quintessence evolution\n");
 

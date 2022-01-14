@@ -183,7 +183,7 @@ void initializeCLASSstructures(metadata & sim, icsettings & ic, cosmology & cosm
   sprintf(class_filecontent.value[i++], "quintessence_extended");
   //
   sprintf(class_filecontent.name[i], "parameters_smg");
-  sprintf(class_filecontent.value[i++],"%e, %e, %e, %e, %e",quintessence.mg_sigma, quintessence.mg_Lambda, quintessence.mg_alpha, quintessence.ic_phi, quintessence.ic_phi_p);
+  sprintf(class_filecontent.value[i++],"%e, %e, %e, %e, %e",quintessence.mg_sigma, quintessence.mg_Lambda, quintessence.mg_alpha, quintessence.ic_phi_p, quintessence.ic_phi);
 
   sprintf(class_filecontent.name[i], "tuning_dxdy_guess_smg");
   sprintf(class_filecontent.value[i++], "%d", 1);
