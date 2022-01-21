@@ -1,6 +1,6 @@
 // Alessandro Casalino
 //
-// Compile with (Mac with default homebrew gsl 2.6) gcc-10 -O2 background_evolve.c -o background_evolve.exe -L/usr/local/Cellar/gsl/2.6/lib -I/usr/local/Cellar/gsl/2.6/include -lgsl
+// Compile with (Mac with default homebrew gsl 2.6) gcc-11 -O2 background_evolve.c -o background_evolve.exe -L/usr/local/Cellar/gsl/2.7/lib -I/usr/local/Cellar/gsl/2.7/include -lgsl
 // Run with ./background_evolve.exe
 
 #include <stdio.h>
@@ -10,6 +10,8 @@
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_spline.h>
 
+// Undefine (comment) to use hi_class units
+#define GEVOLUTION_UNITS
 
 // PHYSICAL PARAMETERS VALUES
 
@@ -21,9 +23,9 @@ double a_end = 1.1;
 
 // Values of fractional density for the cosmological matter today
 double Omega_rad_0 = 9.16681e-05;
-double Omega_b_0 = 0.0486;//0.0490439;
+double Omega_b_0 = 0.0482754;//0.0486;//0.0490439;
 double Omega_Lambda_0 = 0.;//0.6911;
-double Omega_cdm_0 = 0.2589;//0.264201;
+double Omega_cdm_0 = 0.263771;//0.2589;//0.264201;
 
 // Physical constants for output conversions
 double _G_ = 6.67428e-11;                 /**< Newton constant in m^3/Kg/s^2 */
@@ -32,8 +34,16 @@ double _Gyr_over_Mpc_ = 3.06601394e2;     // Conversion factor from Gyr to Mpc
 double _c_ = 2.99792458e8;                // Speed of light in m/s
 double _H0_ = 67.556;                      // H0 of LCDM in Km/s/Mpc (h:0.6731)
 
+#ifndef GEVOLUTION_UNITS
 double fourpiG = 0.5;
+#else
+double fourpiG = 0.66759;
+double _c_gev_ = 2997.92458;
+double boxsize = 100.;
+//While value of H0 [sqrt(2*fourpiG/3) in gevolution] in hi_class is 0.000225343
+#endif
 
+// Conformal time flag
 int T_CONF = 1;
 
 // COMPUTATION PARAMETERS VALUES
@@ -66,8 +76,18 @@ double bisection_min = 0.;
 double bisection_max = 20.;
 
 // Initial conditions (considered accordingly to the bisection_type choice)
-double mg_field_bk_0 = 1e-20 ;
-double mg_field_p_bk_0 = 1.6;
+#ifndef GEVOLUTION_UNITS
+double mg_field_bk_0 = 1e-20;
+double mg_field_p_bk_0 = 1.; // instead of 1.6 of hi_class to obtain same results (?)
+#else
+// Converting from [1] in hi_class to [L] in gevolution: divide by H0(gevolution) = [sqrt(2*fourpiG/3) in gevolution]
+double mg_field_bk_0 = 1e-20/0.667128;
+// Converting from [1/L = 1/Mpc] in hi_class to [1] in gevolution: divide by H0(hi_class)
+// But:
+// 1. when we start hi_class background we already multiply 1.6 by H0(hi_class), so dividing by H0(hi_class)
+// would just remove this H0(hi_class): no need for further divide
+double mg_field_p_bk_0 = 1./0.67556;
+#endif
 
 // TEST MODE
 // Provides some informations on the terminal and the .csv file during the computation (1: on, others: off)
@@ -75,45 +95,54 @@ int TEST_MODE = 1;
 
 
 // Definition of the POTENTIAL
-// For a list of the models see above
-double mg_pot_const = 1.;  // 0 for LambdaCDM
-double mg_pot_exp = 0.5;  // 0 for LambdaCDM
+// Set to 0 to use LambdaCDM
+double mg_pot_const = 1.;  // This is Lambda^4 in the paper
+double mg_pot_exp = 0.5;   // This is sigma in the paper
 
 
 double mg_pot(const double mg_field_bk) {
-
-  return mg_pot_const * pow(mg_field_bk, - mg_pot_exp);
-
+#ifndef GEVOLUTION_UNITS
+    return mg_pot_const * pow(mg_field_bk, - mg_pot_exp);
+#else
+    return mg_pot_const * (2.*fourpiG/3.) * pow(mg_field_bk*sqrt(2.*fourpiG/3.), - mg_pot_exp);
+#endif
 }
 
 double mg_pot_p(const double mg_field_bk) {
-
-  return - mg_pot_exp  * mg_pot_const * pow(mg_field_bk, - mg_pot_exp - 1.);
-
+#ifndef GEVOLUTION_UNITS
+    return - mg_pot_exp * mg_pot_const * pow(mg_field_bk, - mg_pot_exp - 1.);
+#else
+    return - mg_pot_exp * mg_pot_const * (2.*fourpiG/3.) * pow(mg_field_bk*sqrt(2.*fourpiG/3.), - mg_pot_exp - 1.)*sqrt(2.*fourpiG/3.);
+#endif
 }
 
-// Definition of the COUPLING FUNCION
-// For a list of the models see above
-double mg_coupl_const = 0.1; // 0 for LambdaCDM
 
+// Definition of the COUPLING FUNCTION
+// Set to 0 to use LambdaCDM
+double mg_coupl_const = 0.1; // This is alpha in the paper
 
 double mg_coupl(const double mg_field_bk) {
-
-  // 2 factor to be consistent with hi_class units (8 pi G = 1)
-  return mg_coupl_const * mg_field_bk * mg_field_bk;
-
+#ifndef GEVOLUTION_UNITS
+    return mg_coupl_const * mg_field_bk * mg_field_bk;
+#else
+    return mg_coupl_const * sqrt(2.*fourpiG/3.) * sqrt(2.*fourpiG/3.) * mg_field_bk * mg_field_bk;
+#endif
 }
 
 double mg_coupl_p(const double mg_field_bk) {
-
-  return 2.*mg_coupl_const * mg_field_bk;
-
+#ifndef GEVOLUTION_UNITS
+    return 2. * mg_coupl_const * mg_field_bk;
+#else
+    return 2. * mg_coupl_const * sqrt(2.*fourpiG/3.) * sqrt(2.*fourpiG/3.) * mg_field_bk;
+#endif
 }
 
 double mg_coupl_pp(const double mg_field_bk) {
-
-  return 2.*mg_coupl_const;
-
+#ifndef GEVOLUTION_UNITS
+    return 2. * mg_coupl_const;
+#else
+    return 2. * mg_coupl_const * sqrt(2.*fourpiG/3.) * sqrt(2.*fourpiG/3.);
+#endif
 }
 
 // Definitions of DIFFERENTIAL EQUATION system
@@ -248,7 +277,7 @@ void csv(double * t, double * a, double * a_p, double * mg_field_bk, double * mg
 
       fprintf(fp, ", %e", mg_field_bk[i]);
       fprintf(fp, ", %e", mg_field_p_bk[i]);
-      fprintf(fp, ", %e", mg_field_bk_pp_rk4(a[i], a_p[i], mg_field_bk[i], mg_field_p_bk[i]));
+      fprintf(fp, ", %e", phi_pp);
 
       if(TEST_MODE==1){
 
@@ -257,7 +286,7 @@ void csv(double * t, double * a, double * a_p, double * mg_field_bk, double * mg
         H_test = a_p[i]/a[i];
         if(T_CONF==0) H_test = H_test / a[i];
 
-        fprintf(fp, ", %e", H_test / sqrt(2. * fourpiG / 3. / (1. + mg_coupl(mg_field_bk[i_a0])) ));
+        fprintf(fp, ", %e", H_test / (a_p[i_a0]/a[i_a0]));
 
       }
 
@@ -491,6 +520,10 @@ double bisection (double min, double max, double * t, double * a, double * a_p, 
 
 int main() {
 
+#ifdef GEVOLUTION_UNITS
+//fourpiG = 1.5 * boxsize * boxsize /_c_gev_ /_c_gev_;
+#endif
+
     double Omega_f_0 = 1. - Omega_Lambda_0 - Omega_rad_0 - Omega_b_0 - Omega_cdm_0;
 
     printf("\n\t\t----------------------------------------\n\n");
@@ -513,7 +546,7 @@ int main() {
     a[0] = a_init;
 
     mg_field_bk[0] = mg_field_bk_0;
-    mg_field_p_bk[0] = mg_field_p_bk_0; //*  1. * _H0_/(_c_/1000.0);
+    mg_field_p_bk[0] = mg_field_p_bk_0;
 
     printf("\n Extended quintessence evolution\n");
 
