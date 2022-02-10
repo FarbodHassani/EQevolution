@@ -713,7 +713,7 @@ void loadBGFunctions(background & class_background, mg_cosmology & quintessence,
     }
     else if (strncmp(qname,"conf. time [Mpc]",strlen("conf. time [Mpc]")) == 0 || strncmp(qname,"scale factor",strlen("scale factor")) == 0)
     {
-      bg[i-bg_size] *=  2./3./ sqrt(fourpiG) * data[(class_background.bt_size-1)*cols + Hcol];
+      bg[i-bg_size] *=  data[(class_background.bt_size-1)*cols + Hcol]/ sqrt(2./3. * fourpiG);
     }
     else if (strncmp(qname,"phi_prime_smg",strlen("phi_prime_smg")) == 0) //phi is defined to be dimensionless refer to David's paper where we have (phi/phi_*), so we keep it like that.
     {
