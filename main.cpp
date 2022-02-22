@@ -420,7 +420,8 @@ int main(int argc, char **argv)
 
 	//Quintessence
 	double alpha = quintessence.mg_alpha;
-	double Lambda = quintessence.mg_Lambda * pow(2.*fourpiG/3.,0.25);//Lambda is dimensionful so we convert to gevolution's units.
+  // LambdaVal
+	double Lambda =pow(2.*fourpiG/3. * 2.197266,0.25); //quintessence.mg_Lambda * pow(2.*fourpiG/3.,0.25);//Lambda is dimensionful so we convert to gevolution's units.
 	double sigma = quintessence.mg_sigma;
   double mg_field = gsl_spline_eval(quintessence.spline_mg_field, a, quintessence.acc_mg_field);
   double mg_field_prime = gsl_spline_eval(quintessence.spline_mg_field_p, a, quintessence.acc_mg_field_p);
@@ -527,8 +528,9 @@ int main(int argc, char **argv)
   outfile = fopen(filename, "w+");
   fclose(outfile);
 
+  // EQ
+  double a2, rhoa2, Pa2, f_varphi, f_varphi_prime, V_varphi;
   phi_bg = gsl_spline_eval(quintessence.spline_mg_field, a, quintessence.acc_mg_field);
-  // /gsl_spline_eval(quintessence.spline_H,1.,quintessence.acc_H);
   phi_p_bg = gsl_spline_eval(quintessence.spline_mg_field_p, a, quintessence.acc_mg_field_p);
 
 	while (true)    // main loop
@@ -700,16 +702,25 @@ int main(int argc, char **argv)
 			else
 			{
 				if (cycle == 0)
-					fprintf(outfile, "# background statistics\n# 0: cycle   1: tau/boxsize    2: a             3: conformal H/H0   4: scalar(phi)   5: scalar_p/H0   6: scalar_pp/H0^2    7: phi_bg(gevolution)   8: phi_prime_bg(gevolution)      9: phi(k=0)       10: T00(k=0)\n");
-				fprintf(outfile, " %6d   %e   %e   %e   %e    %e   %e    %e   %e    %e    %e\n", cycle, tau, a, Hconf_quintessence / gsl_spline_eval(quintessence.spline_H, 1., quintessence.acc_H), mg_field, mg_field_prime/gsl_spline_eval(quintessence.spline_H, 1., quintessence.acc_H), mg_field_prime_prime/gsl_spline_eval(quintessence.spline_H, 1., quintessence.acc_H)/gsl_spline_eval(quintessence.spline_H, 1., quintessence.acc_H), phi_bg * gsl_spline_eval(quintessence.spline_H,1.,quintessence.acc_H), phi_p_bg, scalarFT(kFT).real(), T00hom);
+					fprintf(outfile, "# background statistics\n# 0: cycle   1: tau/boxsize    2: a             3: conformal H/H0   4: scalar(phi)   5: scalar_p/H0   6: scalar_pp/H0^2    7: phi_bg(gevolution)* H0   8: phi_prime_bg(gevolution)      9: phi(k=0)       10: T00(k=0)\n");
+				fprintf(outfile, " %6d   %e   %e   %e   %e    %e   %e    %e   %e    %e    %e\n", cycle, tau, a, Hconf_quintessence / gsl_spline_eval(quintessence.spline_H, 1., quintessence.acc_H), mg_field, mg_field_prime/gsl_spline_eval(quintessence.spline_H, 1., quintessence.acc_H), mg_field_prime_prime/gsl_spline_eval(quintessence.spline_H, 1., quintessence.acc_H)/gsl_spline_eval(quintessence.spline_H, 1., quintessence.acc_H), phi_bg , phi_p_bg/ gsl_spline_eval(quintessence.spline_H,1.,quintessence.acc_H), scalarFT(kFT).real(), T00hom);
 				fclose(outfile);
 			}
+      double a2    = a * a;
+      double rhoa2 = (cosmo.Omega_cdm + cosmo.Omega_b) / a + ( cosmo.Omega_Lambda * a2) + (cosmo.Omega_rad / a2);
+      double Pa2   = - (cosmo.Omega_Lambda * a2) + 1./3. * (cosmo.Omega_rad / a2 );
 
       phi_p_bg = phi_p_bg + dtau * phi_pp_bg;
       V_prime_varphi = - sigma * Lambda * Lambda * Lambda * Lambda * pow(phi_bg, -sigma-1.);
-      // V_prime_varphi = - sigma * Lambda * Lambda * Lambda * Lambda * pow(phi_bg * gsl_spline_eval(quintessence.spline_H,1.,quintessence.acc_H), -sigma-1.) * gsl_spline_eval(quintessence.spline_H,1.,quintessence.acc_H);
-      // phi_pp_bg = -2 * Hconf_quintessence * phi_p_bg- a*a * V_prime_varphi + 3/(2.*fourpiG)* (Hconf_quintessence*Hconf_quintessence + Hconf_prime_quintessence) * 2. * alpha * phi_bg * gsl_spline_eval(quintessence.spline_H,1.,quintessence.acc_H) * gsl_spline_eval(quintessence.spline_H,1.,quintessence.acc_H);
-      phi_pp_bg = -2 * gsl_spline_eval(quintessence.spline_H, a, quintessence.acc_H) * phi_p_bg- a*a * V_prime_varphi + 3/(1.)* (gsl_spline_eval(quintessence.spline_H, a, quintessence.acc_H)* gsl_spline_eval(quintessence.spline_H, a, quintessence.acc_H) + gsl_spline_eval(quintessence.spline_H_prime, a, quintessence.acc_H_prime)) * 2. * alpha * phi_bg;
+      f_varphi =  alpha *  pow(phi_bg, 2.0);
+      f_varphi_prime = 2.0 * alpha * phi_bg;
+      V_varphi =  Lambda * Lambda * Lambda * Lambda * pow(phi_bg, -sigma);
+
+      // phi_pp_bg = + ( rhoa2 - 3. * Pa2) * sqrt(2.*fourpiG/3.) * sqrt(2.*fourpiG/3.) /2. * f_varphi_prime / (1. + f_varphi + 3./4./fourpiG * f_varphi_prime *f_varphi_prime );
+      // phi_pp_bg = -2 * gsl_spline_eval(quintessence.spline_H, a, quintessence.acc_H) * phi_p_bg +
+      //  ( - V_prime_varphi * a2 * ( 1. +  f_varphi ) + ( rhoa2 - 3. * Pa2 + 4. * a2 * V_varphi - phi_p_bg * phi_p_bg * ( 1. + 3./2./fourpiG * 2. * alpha ) ) /2. * f_varphi_prime ) / (1. + f_varphi + 3./4./fourpiG * f_varphi_prime *f_varphi_prime );
+
+      phi_pp_bg = -2 * gsl_spline_eval(quintessence.spline_H, a, quintessence.acc_H) * phi_p_bg- a*a * V_prime_varphi +  (gsl_spline_eval(quintessence.spline_H, a, quintessence.acc_H) * gsl_spline_eval(quintessence.spline_H, a, quintessence.acc_H) + gsl_spline_eval(quintessence.spline_H_prime, a, quintessence.acc_H_prime)) * 2. * alpha * phi_bg;
 
       phi_bg = phi_bg + dtau * phi_p_bg;
 		}

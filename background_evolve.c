@@ -1,25 +1,23 @@
 // Alessandro Casalino
 //
-// Compile with (Mac with default homebrew gsl 2.6) gcc-11 -O2 background_evolve.c -o background_evolve.exe -L/usr/local/Cellar/gsl/2.7/lib -I/usr/local/Cellar/gsl/2.7/include -lgsl
+// Compile with gcc-11 -O2 background_evolve.c -o background_evolve.exe
 // Run with ./background_evolve.exe
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
-#include <gsl/gsl_errno.h>
-#include <gsl/gsl_spline.h>
 
 // Undefine (comment) to use hi_class units
-#define GEVOLUTION_UNITS
+//#define GEVOLUTION_UNITS
 
 // PHYSICAL PARAMETERS VALUES
 
 // INITIAL CONDITIONS
 // Initial value of the scale factor
-double a_init = 1./(1+1.e14);
+double a_init = 1./(1.+1e2);
 // Final value of the scale factor
-double a_end = 1.1;
+double a_end = 1.0;
 
 // Values of fractional density for the cosmological matter today
 double Omega_rad_0 = 9.16681e-05;
@@ -32,14 +30,13 @@ double _G_ = 6.67428e-11;                 /**< Newton constant in m^3/Kg/s^2 */
 double _MPc_over_m_ = 3.085677581282e22;  // Conversion factor from Mpc to m
 double _Gyr_over_Mpc_ = 3.06601394e2;     // Conversion factor from Gyr to Mpc
 double _c_ = 2.99792458e8;                // Speed of light in m/s
-double _H0_ = 67.556;                      // H0 of LCDM in Km/s/Mpc (h:0.6731)
+double _h_ = 0.67556;
 
 #ifndef GEVOLUTION_UNITS
 double fourpiG = 0.5;
 #else
-double fourpiG = 0.66759;
-double _c_gev_ = 2997.92458;
-double boxsize = 100.;
+double fourpiG;                            // = 0.66759 with boxsize = 2000.;
+double boxsize = 2000.;                    // Mpc/h
 //While value of H0 [sqrt(2*fourpiG/3) in gevolution] in hi_class is 0.000225343
 #endif
 
@@ -76,18 +73,9 @@ double bisection_min = 0.;
 double bisection_max = 20.;
 
 // Initial conditions (considered accordingly to the bisection_type choice)
-#ifndef GEVOLUTION_UNITS
-double mg_field_bk_0 = 1e-20;
-double mg_field_p_bk_0 = 1.; // instead of 1.6 of hi_class to obtain same results (?)
-#else
-// Converting from [1] in hi_class to [L] in gevolution: divide by H0(gevolution) = [sqrt(2*fourpiG/3) in gevolution]
-double mg_field_bk_0 = 1e-20/0.667128;
-// Converting from [1/L = 1/Mpc] in hi_class to [1] in gevolution: divide by H0(hi_class)
-// But:
-// 1. when we start hi_class background we already multiply 1.6 by H0(hi_class), so dividing by H0(hi_class)
-// would just remove this H0(hi_class): no need for further divide
-double mg_field_p_bk_0 = 1./0.67556;
-#endif
+double mg_field_bk_0 = 0.004194158324691788;//1e-20;
+double mg_field_p_bk_0 = 0.029075*0.57735; // instead of 1.6 of hi_class to obtain same results (?)
+
 
 // TEST MODE
 // Provides some informations on the terminal and the .csv file during the computation (1: on, others: off)
@@ -102,7 +90,7 @@ double mg_pot_exp = 0.5;   // This is sigma in the paper
 
 double mg_pot(const double mg_field_bk) {
 #ifndef GEVOLUTION_UNITS
-    return mg_pot_const * pow(mg_field_bk, - mg_pot_exp);
+    return mg_pot_const * (2.*fourpiG/3.) * pow(mg_field_bk, - mg_pot_exp);
 #else
     return mg_pot_const * (2.*fourpiG/3.) * pow(mg_field_bk*sqrt(2.*fourpiG/3.), - mg_pot_exp);
 #endif
@@ -110,9 +98,9 @@ double mg_pot(const double mg_field_bk) {
 
 double mg_pot_p(const double mg_field_bk) {
 #ifndef GEVOLUTION_UNITS
-    return - mg_pot_exp * mg_pot_const * pow(mg_field_bk, - mg_pot_exp - 1.);
+    return - mg_pot_exp * mg_pot_const * (2.*fourpiG/3.) * pow(mg_field_bk, - mg_pot_exp - 1.);
 #else
-    return - mg_pot_exp * mg_pot_const * (2.*fourpiG/3.) * pow(mg_field_bk*sqrt(2.*fourpiG/3.), - mg_pot_exp - 1.)*sqrt(2.*fourpiG/3.);
+    return - mg_pot_exp * mg_pot_const * (2.*fourpiG/3.) * pow(mg_field_bk*sqrt(2.*fourpiG/3.), - mg_pot_exp - 1.) * sqrt(2.*fourpiG/3.);
 #endif
 }
 
@@ -154,11 +142,13 @@ double a_p_rk4(const double a, const double a_p, const double mg_field_bk, const
 }
 double a_pp_rk4(const double a, const double a_p, const double mg_field_bk, const double mg_field_p_bk)
 {
-  double a3 = a * a * a;
+  double a3    = a * a * a;
   double rhoa3 = (Omega_cdm_0 + Omega_b_0) + (Omega_Lambda_0 * a3) + (Omega_rad_0 / a);
-  double Pa3 = - (Omega_Lambda_0 * a3) + 1./3. * (Omega_rad_0 / a );
+  double Pa3   = - (Omega_Lambda_0 * a3) + 1./3. * (Omega_rad_0 / a );
 
-  return fourpiG / 3. * ( (rhoa3 - 3. * Pa3) - a * mg_field_p_bk * mg_field_p_bk * (1. + 3./2./fourpiG * mg_coupl_pp(mg_field_bk)) + 4. * a3 * mg_pot(mg_field_bk) + 3./2./fourpiG * a3 * mg_pot_p(mg_field_bk) * mg_coupl_p(mg_field_bk))/(1. + mg_coupl(mg_field_bk) + 3./4./fourpiG * mg_coupl_p(mg_field_bk) * mg_coupl_p(mg_field_bk));
+  return fourpiG / 3. * ( (rhoa3 - 3. * Pa3) - a * mg_field_p_bk * mg_field_p_bk * (1. + 3./2./fourpiG * mg_coupl_pp(mg_field_bk))
+  + 4. * a3 * mg_pot(mg_field_bk) + 3./2./fourpiG * a3 * mg_pot_p(mg_field_bk) * mg_coupl_p(mg_field_bk))/(1. + mg_coupl(mg_field_bk)
+  + 3./4./fourpiG * mg_coupl_p(mg_field_bk) * mg_coupl_p(mg_field_bk));
 }
 double mg_field_bk_p_rk4(const double a, const double a_p, const double mg_field_bk, const double mg_field_p_bk)
 {
@@ -166,16 +156,18 @@ double mg_field_bk_p_rk4(const double a, const double a_p, const double mg_field
 }
 double mg_field_bk_pp_rk4(const double a, const double a_p, const double mg_field_bk, const double mg_field_p_bk)
 {
-  double a2 = a * a;
-  double rhoa2 = (Omega_cdm_0 + Omega_b_0) / a + (Omega_Lambda_0 * a2) + (Omega_rad_0 / a / a);
-  double Pa2 = - (Omega_Lambda_0 * a2) + 1./3. * (Omega_rad_0 / a / a );
+  double a2    = a * a;
+  double rhoa2 = (Omega_cdm_0 + Omega_b_0) / a + (Omega_Lambda_0 * a2) + (Omega_rad_0 / a2);
+  double Pa2   = - (Omega_Lambda_0 * a2) + 1./3. * (Omega_rad_0 / a2 );
 
-	return - 2. * a_p/a * mg_field_p_bk + ( - mg_pot_p(mg_field_bk) * a2 * ( 1. + mg_coupl(mg_field_bk) ) + ( rhoa2 - 3. * Pa2 + 4. * a2 * mg_pot(mg_field_bk) - mg_field_p_bk * mg_field_p_bk * ( 1. + 3./2./fourpiG * mg_coupl_pp(mg_field_bk) ) ) /2. * mg_coupl_p(mg_field_bk) ) / (1. + mg_coupl(mg_field_bk) + 3./4./fourpiG * mg_coupl_p(mg_field_bk) * mg_coupl_p(mg_field_bk) );
+	return - 2. * a_p/a * mg_field_p_bk + ( - mg_pot_p(mg_field_bk) * a2 * ( 1. + mg_coupl(mg_field_bk) ) + ( (rhoa2 - 3. * Pa2) * sqrt(2.*fourpiG/3.) * sqrt(2.*fourpiG/3.) + 4. * a2 * mg_pot(mg_field_bk) - mg_field_p_bk * mg_field_p_bk * ( 1. + 3./2./fourpiG * mg_coupl_pp(mg_field_bk) ) ) /2. * mg_coupl_p(mg_field_bk) ) / (1. + mg_coupl(mg_field_bk) + 3./4./fourpiG * mg_coupl_p(mg_field_bk) * mg_coupl_p(mg_field_bk) );
+
+	// return - 2. * a_p/a * mg_field_p_bk + ( - mg_pot_p(mg_field_bk) * a2 * ( 1. + mg_coupl(mg_field_bk) ) + ( rhoa2 - 3. * Pa2 + 4. * a2 * mg_pot(mg_field_bk) - mg_field_p_bk * mg_field_p_bk * ( 1. + 3./2./fourpiG * mg_coupl_pp(mg_field_bk) ) ) /2. * mg_coupl_p(mg_field_bk) ) / (1. + mg_coupl(mg_field_bk) + 3./4./fourpiG * mg_coupl_p(mg_field_bk) * mg_coupl_p(mg_field_bk) );
 }
 double Hconf(const double a, const double mg_field_bk, const double mg_field_p_bk)
 {
-  double a2 = a * a;
-  double rhoa2 = (Omega_cdm_0 + Omega_b_0) / a + (Omega_Lambda_0 * a2) + (Omega_rad_0 / a / a);
+  double a2    = a * a;
+  double rhoa2 = (Omega_cdm_0 + Omega_b_0) / a + (Omega_Lambda_0 * a2) + (Omega_rad_0 / a2);
 
   return - mg_field_p_bk * mg_coupl_p(mg_field_bk)/(1. + mg_coupl(mg_field_bk))/2. + sqrt((2. * fourpiG / 3.) * (1. + mg_coupl(mg_field_bk)) * ( rhoa2 + (mg_field_p_bk * mg_field_p_bk / 2.) + (a2 * mg_pot(mg_field_bk)) ) + mg_field_p_bk * mg_field_p_bk/4. * mg_coupl_p(mg_field_bk) * mg_coupl_p(mg_field_bk))/(1. + mg_coupl(mg_field_bk));
 }
@@ -189,9 +181,9 @@ double particleHorizonIntegrand(double a, double mg_field_bk, double mg_field_p_
 double particleHorizon(const int i, double * a, double * mg_field_bk, double * mg_field_p_bk) {
   double h = a[i]-a[i-1];
   double fa = particleHorizonIntegrand(a[i-1],mg_field_bk[i-1],mg_field_p_bk[i-1]);
-  double fb = particleHorizonIntegrand(a[i],mg_field_bk[i],mg_field_p_bk[i]);
+  double fb = particleHorizonIntegrand(a[i]  ,mg_field_bk[i]  ,mg_field_p_bk[i]);
 
-  return h*(fa+fb)/2.;
+  return h * (fa + fb)/2.;
 }
 
 
@@ -213,15 +205,16 @@ void csv(double * t, double * a, double * a_p, double * mg_field_bk, double * mg
     fp = fopen (filename, "w+");
     fprintf(fp, "%s, %s, %s, %s, %s, %s, %s, %s", "t", "a(t)", "H(t)/H0", "H_prime(t)/H0^2", "Omega_df", "Omega_r", "Omega_b", "Omega_cdm");
     fprintf(fp, ", %s", "omega_df");
-    fprintf(fp, ", %s", "PH"); // Particle horizon
-    fprintf(fp, ", %s", "mg_field[1]");
-    fprintf(fp, ", %s", "mg_field_p[H0]");
-    fprintf(fp, ", %s", "mg_field_pp[H0^2]");
+    fprintf(fp, ", %s", "ParticleHorizon"); // Particle horizon
+    fprintf(fp, ", %s", "mg_field");
+    fprintf(fp, ", %s", "mg_field_p");
+    fprintf(fp, ", %s", "mg_field_pp");
+    if(TEST_MODE==1) fprintf(fp, ", %s", "rho_df");
     if(TEST_MODE==1) fprintf(fp, ", %s", "H_check(t)/H0");
     fprintf(fp, "\n");
 
     // Time conversion factor
-    // double tcf = 1./_H0_/(60.*60.*24.*365.*1e9)*_MPc_over_m_/1000.;
+    // double tcf = 1./(_h_*100.)/(60.*60.*24.*365.*1e9)*_MPc_over_m_/1000.;
 
     int i = 0;
     double particleHorizonRes = 0.;
@@ -229,6 +222,9 @@ void csv(double * t, double * a, double * a_p, double * mg_field_bk, double * mg
     for(i=1;i<points-1;i++){
       particleHorizonRes += particleHorizon(i,a,mg_field_bk,mg_field_p_bk);
       particleHorizonVec[i] = particleHorizonRes;
+#ifdef GEVOLUTION_UNITS
+      particleHorizonVec[i] *= sqrt(2.*fourpiG/3.);
+#endif
     }
 
     i = 0;
@@ -240,16 +236,16 @@ void csv(double * t, double * a, double * a_p, double * mg_field_bk, double * mg
 
     while( a[i] <= a_end ){
 
-      double H = Hconf(a[i],mg_field_bk[i],mg_field_p_bk[i]); // this is the Hubble constant with conformal time
-      double H_prime = a_pp_rk4(a[i], a_p[i], mg_field_bk[i], mg_field_p_bk[i]) / a[i] - H * H; // this is Hubble prime with conformal time
-      double phi_pp = mg_field_bk_pp_rk4(a[i], a_p[i], mg_field_bk[i], mg_field_p_bk[i]);
+      double H         = Hconf(a[i],mg_field_bk[i],mg_field_p_bk[i]); // this is the Hubble constant with conformal time
+      double H_prime   = a_pp_rk4(a[i], a_p[i], mg_field_bk[i], mg_field_p_bk[i]) / a[i] - H * H; // this is Hubble prime with conformal time
+      double phi_pp    = mg_field_bk_pp_rk4(a[i], a_p[i], mg_field_bk[i], mg_field_p_bk[i]);
 
-      double P_df   = - mg_pot(mg_field_bk[i]) + mg_field_p_bk[i] * mg_field_p_bk[i]/2./a[i]/a[i] + 1./(2.*fourpiG)*( mg_coupl(mg_field_bk[i])*(H*H+2.*H_prime) + (H*mg_field_p_bk[i]+phi_pp) * mg_coupl_p(mg_field_bk[i]) + mg_field_p_bk[i] * mg_field_p_bk[i] * mg_coupl_pp(mg_field_bk[i]))/a[i]/a[i];
-      double rho_df = mg_pot(mg_field_bk[i]) + mg_field_p_bk[i] * mg_field_p_bk[i]/2./a[i]/a[i] - 3./2./fourpiG * ( H * mg_field_p_bk[i] * mg_coupl_p(mg_field_bk[i]) + H * H * mg_coupl(mg_field_bk[i]))/a[i]/a[i];
+      double P_df      = - mg_pot(mg_field_bk[i]) + mg_field_p_bk[i] * mg_field_p_bk[i]/2./a[i]/a[i] + 1./(2.*fourpiG)*( mg_coupl(mg_field_bk[i])*(H*H+2.*H_prime) + (H*mg_field_p_bk[i]+phi_pp) * mg_coupl_p(mg_field_bk[i]) + mg_field_p_bk[i] * mg_field_p_bk[i] * mg_coupl_pp(mg_field_bk[i]))/a[i]/a[i];
+      double rho_df    = mg_pot(mg_field_bk[i]) + mg_field_p_bk[i] * mg_field_p_bk[i]/2./a[i]/a[i] - 3./2./fourpiG * ( H * mg_field_p_bk[i] * mg_coupl_p(mg_field_bk[i]) + H * H * mg_coupl(mg_field_bk[i]))/a[i]/a[i];
 
       double Omega_df  = 2. * fourpiG / 3. * a[i] * a[i] * rho_df /H /H;
       double Omega_rad = 2. * fourpiG / 3. * Omega_rad_0 /a[i] /a[i] /H /H;
-      double Omega_b = 2. * fourpiG / 3. * Omega_b_0 /a[i] /H /H;
+      double Omega_b   = 2. * fourpiG / 3. * Omega_b_0 /a[i] /H /H;
       double Omega_cdm = 2. * fourpiG / 3. * Omega_cdm_0 /a[i] /H /H;
 
       if(rho_df<0 && w1==0 && i>0){
@@ -276,10 +272,12 @@ void csv(double * t, double * a, double * a_p, double * mg_field_bk, double * mg
       fprintf(fp, ", %e", particleHorizonVec[i]);
 
       fprintf(fp, ", %e", mg_field_bk[i]);
-      fprintf(fp, ", %e", mg_field_p_bk[i]);
-      fprintf(fp, ", %e", phi_pp);
+      fprintf(fp, ", %e", mg_field_p_bk[i]/(a_p[i_a0]/a[i_a0]));
+      fprintf(fp, ", %e", phi_pp/(a_p[i_a0]/a[i_a0])/(a_p[i_a0]/a[i_a0]));
 
       if(TEST_MODE==1){
+
+        fprintf(fp, ", %e", rho_df);
 
         double H_test;
 
@@ -351,14 +349,14 @@ void mg_rungekutta4bg(double * f, const double dtau)
 	k3f 	= mg_field_bk_p_rk4   (a + k2a * dtau / 2., a_p + k2ap * dtau / 2., mg_field_bk + k2f * dtau / 2., mg_field_p_bk + k2fp * dtau / 2.);
 	k3fp 	= mg_field_bk_pp_rk4  (a + k2a * dtau / 2., a_p + k2ap * dtau / 2., mg_field_bk + k2f * dtau / 2., mg_field_p_bk + k2fp * dtau / 2.);
 
-	k4a 	= a_p_rk4             (a + k3a * dtau, a_p + k3ap * dtau, mg_field_bk + k3f * dtau, mg_field_p_bk + k3fp * dtau);
-	k4ap 	= a_pp_rk4            (a + k3a * dtau, a_p + k3ap * dtau, mg_field_bk + k3f * dtau, mg_field_p_bk + k3fp * dtau);
-	k4f 	= mg_field_bk_p_rk4   (a + k3a * dtau, a_p + k3ap * dtau, mg_field_bk + k3f * dtau, mg_field_p_bk + k3fp * dtau);
-	k4fp 	= mg_field_bk_pp_rk4  (a + k3a * dtau, a_p + k3ap * dtau, mg_field_bk + k3f * dtau, mg_field_p_bk + k3fp * dtau);
+	k4a 	= a_p_rk4             (a + k3a * dtau     , a_p + k3ap * dtau     , mg_field_bk + k3f * dtau     , mg_field_p_bk + k3fp * dtau);
+	k4ap 	= a_pp_rk4            (a + k3a * dtau     , a_p + k3ap * dtau     , mg_field_bk + k3f * dtau     , mg_field_p_bk + k3fp * dtau);
+	k4f 	= mg_field_bk_p_rk4   (a + k3a * dtau     , a_p + k3ap * dtau     , mg_field_bk + k3f * dtau     , mg_field_p_bk + k3fp * dtau);
+	k4fp 	= mg_field_bk_pp_rk4  (a + k3a * dtau     , a_p + k3ap * dtau     , mg_field_bk + k3f * dtau     , mg_field_p_bk + k3fp * dtau);
 
-	f[1] += dtau * (k1a + 2. * k2a + 2. * k3a + k4a) / 6.;
+	f[1] += dtau * (k1a  + 2. * k2a  + 2. * k3a  + k4a)  / 6.;
 	f[2] += dtau * (k1ap + 2. * k2ap + 2. * k3ap + k4ap) / 6.;
-	f[3] += dtau * (k1f + 2. * k2f + 2. * k3f + k4f) / 6.;
+	f[3] += dtau * (k1f  + 2. * k2f  + 2. * k3f  + k4f)  / 6.;
 	f[4] += dtau * (k1fp + 2. * k2fp + 2. * k3fp + k4fp) / 6.;
 
 }
@@ -383,9 +381,9 @@ double rk4(double * t, double * a, double * a_p, double * mg_field_bk, double * 
 
       mg_rungekutta4bg(f, t[i+1]-t[i]);
 
-      a[i+1] = f[1];
-      a_p[i+1] = f[2];
-      mg_field_bk[i+1] = f[3];
+      a[i+1]             = f[1];
+      a_p[i+1]           = f[2];
+      mg_field_bk[i+1]   = f[3];
       mg_field_p_bk[i+1] = f[4];
       i++;
 
@@ -393,11 +391,10 @@ double rk4(double * t, double * a, double * a_p, double * mg_field_bk, double * 
 
     i = scan_for_a0(a,1.);
 
-    double H         = Hconf(a[i], mg_field_bk[i], mg_field_p_bk[i]);
-
-    double rho_df = mg_pot(mg_field_bk[i]) + mg_field_p_bk[i] * mg_field_p_bk[i]/2./a[i]/a[i] - 3./2./fourpiG * ( H * mg_field_p_bk[i] * mg_coupl_p(mg_field_bk[i]) + H * H * mg_coupl(mg_field_bk[i]))/a[i]/a[i];
-    double Omega_df  = 2. * fourpiG / 3. * a[i] * a[i] * rho_df /H /H;
-    return Omega_df  - Omega_f_0;
+    double H        = Hconf(a[i], mg_field_bk[i], mg_field_p_bk[i]);
+    double rho_df   = mg_pot(mg_field_bk[i]) + mg_field_p_bk[i] * mg_field_p_bk[i]/2./a[i]/a[i] - 3./2./fourpiG * ( H * mg_field_p_bk[i] * mg_coupl_p(mg_field_bk[i]) + H * H * mg_coupl(mg_field_bk[i]))/a[i]/a[i];
+    double Omega_df = 2. * fourpiG / 3. * a[i] * a[i] * rho_df /H /H;
+    return Omega_df - Omega_f_0;
 
 }
 
@@ -521,7 +518,18 @@ double bisection (double min, double max, double * t, double * a, double * a_p, 
 int main() {
 
 #ifdef GEVOLUTION_UNITS
-//fourpiG = 1.5 * boxsize * boxsize /_c_gev_ /_c_gev_;
+    // ----- FourpiG and tau
+    // Gevolution fourpiG depends on boxsize
+    fourpiG = 1.5 * boxsize * boxsize /(_c_/1e5) /(_c_/1e5);
+
+    // ----- Initial conditions
+    // Converting from [1] in hi_class to [L] in gevolution: divide by H0(gevolution) = [sqrt(2*fourpiG/3) in gevolution]
+    mg_field_bk_0 /= sqrt(2.*fourpiG/3.);
+    // Converting from [1/L = 1/Mpc] in hi_class to [1] in gevolution: divide by H0(hi_class)
+    // But:
+    // when we start hi_class background we already multiply 1.6 by H0(hi_class), so dividing by H0(hi_class)
+    // would just remove this H0(hi_class): no need for further divide
+    mg_field_p_bk_0 /= sqrt(2.*fourpiG/3.) * sqrt(2.*fourpiG/3.);
 #endif
 
     double Omega_f_0 = 1. - Omega_Lambda_0 - Omega_rad_0 - Omega_b_0 - Omega_cdm_0;
@@ -530,12 +538,12 @@ int main() {
 
     // Definition of the vector needed for the evolution functions
     double * t; double * a; double * a_p; double * mg_field_bk; double * mg_field_p_bk; double * particleHorizonVec;
-    t                   = (double *) malloc(sizeof(double) * points);
-    a                   = (double *) malloc(sizeof(double) * points);
-    a_p                 = (double *) malloc(sizeof(double) * points);
-    mg_field_bk         = (double *) malloc(sizeof(double) * points);
-    mg_field_p_bk       = (double *) malloc(sizeof(double) * points);
-    particleHorizonVec  = (double *) malloc(sizeof(double) * points);
+    t                  = (double *) malloc(sizeof(double) * points);
+    a                  = (double *) malloc(sizeof(double) * points);
+    a_p                = (double *) malloc(sizeof(double) * points);
+    mg_field_bk        = (double *) malloc(sizeof(double) * points);
+    mg_field_p_bk      = (double *) malloc(sizeof(double) * points);
+    particleHorizonVec = (double *) malloc(sizeof(double) * points);
 
     if(!t||!a||!a_p||!mg_field_bk||!mg_field_p_bk||!particleHorizonVec){
       printf("Error! The memory cannot be allocated. The program will be terminated.\n");
@@ -543,17 +551,16 @@ int main() {
     }
 
     // Initial conditions (tau=0)
-    a[0] = a_init;
-
-    mg_field_bk[0] = mg_field_bk_0;
+    a[0]             = a_init;
+    mg_field_bk[0]   = mg_field_bk_0;
     mg_field_p_bk[0] = mg_field_p_bk_0;
 
     printf("\n Extended quintessence evolution\n");
 
     printf("\n Parameters used: \n");
-    printf("\t- Potential constant: %e\n", mg_pot_const);
+    printf("\t- Potential constant: %e\n",   mg_pot_const);
     printf("\t- Potential exponent: %e\n", - mg_pot_exp);
-    printf("\t- Function constant: %e\n", mg_coupl_const);
+    printf("\t- Function constant: %e\n",    mg_coupl_const);
 
     printf(" Searching for best initial value for the dark fluid ... \n \n");
 
@@ -594,7 +601,10 @@ int main() {
 
     printf("\n Results:\n");
     printf("\t- H0: %f \n", a_p[last_int_print]/a[last_int_print]/sqrt(2. * fourpiG / 3.) );
-    printf("\t- Age of the Universe: %f Gyr\n", sqrt(2. * fourpiG / 3.) * t_age/_H0_/(60.*60.*24.*365.*1e9)*_MPc_over_m_/1000.);//t[last_int_print]/((4*M_PI)/3.)
+#ifdef GEVOLUTION_UNITS
+    if(TEST_MODE==1) printf("\t- fourpiG: %f \n", fourpiG );
+#endif
+    printf("\t- Age of the Universe: %f Gyr\n", sqrt(2. * fourpiG / 3.) * t_age/(_h_*100.)/(60.*60.*24.*365.*1e9)*_MPc_over_m_/1000.);//t[last_int_print]/((4*M_PI)/3.)
     if(TEST_MODE==1) printf("\t- Number of points: %d \n", last_int);
 
     char filename[50];
