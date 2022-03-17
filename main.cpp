@@ -702,7 +702,7 @@ int main(int argc, char **argv)
 			else
 			{
 				if (cycle == 0)
-					fprintf(outfile, "# background statistics\n# 0: cycle   1: tau/boxsize    2: a             3: conformal H/H0   4: scalar(phi)   5: scalar_p/H0   6: scalar_pp/H0^2    7: phi_bg(gevolution)* H0   8: phi_prime_bg(gevolution)      9: phi(k=0)       10: T00(k=0)\n");
+					fprintf(outfile, "# background statistics\n# 0: cycle   1: tau/boxsize    2: a             3: conformal H/H0   4: scalar(phi)   5: scalar_p/H0   6: scalar_pp/H0^2    7: phi_bg/sqrt(8 pi G)(gev, unitless)   8: phi_prime_bg/sqrt(8 pi G)/H_0 (gev, unitless)       9: phi(k=0)       10: T00(k=0)\n");
 				fprintf(outfile, " %6d   %e   %e   %e   %e    %e   %e    %e   %e    %e    %e\n", cycle, tau, a, Hconf_quintessence / gsl_spline_eval(quintessence.spline_H, 1., quintessence.acc_H), mg_field, mg_field_prime/gsl_spline_eval(quintessence.spline_H, 1., quintessence.acc_H), mg_field_prime_prime/gsl_spline_eval(quintessence.spline_H, 1., quintessence.acc_H)/gsl_spline_eval(quintessence.spline_H, 1., quintessence.acc_H), phi_bg , phi_p_bg/ gsl_spline_eval(quintessence.spline_H,1.,quintessence.acc_H), scalarFT(kFT).real(), T00hom);
 				fclose(outfile);
 			}
