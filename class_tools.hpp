@@ -599,8 +599,7 @@ void loadBGFunctions(background & class_background, mg_cosmology & quintessence,
 
     if (strncmp(qname,"H_prime",strlen("H_prime")) == 0)
     {
-      if (strncmp(ptr, "(.)rho_tot", strlen("(.)rho_tot")) == 0) bgcol = cols;
-      else if (strncmp(ptr, "(.)p_tot", strlen("(.)p_tot")) == 0) bgcol2 = cols;
+      if (strncmp(ptr, "H_prime", strlen("H_prime")) == 0) bgcol = cols;
       else if (strncmp(ptr, zname, strlen(zname)) == 0) zcol = cols;
     }
     else if (strncmp(qname,"w_mg",strlen("w_mg")) == 0)
@@ -633,13 +632,6 @@ void loadBGFunctions(background & class_background, mg_cosmology & quintessence,
       if (strncmp(ptr, "conf. time [Mpc]", strlen("conf. time [Mpc]")) == 0) bgcol = cols;
       else if (strncmp(ptr, zname, strlen(zname)) == 0) zcol = cols;
     }
-    // else if (strncmp(qname,"phi\'\'",strlen("phi\'\'")) == 0)
-    // {
-    //   if (strncmp(ptr, "phi_smg_prime_prime", strlen("phi\'\'")) == 0) bgcol = cols;
-    //   else if (strncmp(ptr, "phi\'", strlen("phi\'")) ==0) bgcol2 = cols;
-    //   else if (strncmp(ptr, zname, strlen(zname)) == 0) zcol = cols;
-    //   // if(bgcol2==bgcol)
-    // }
 
     // Todo: Think about ncdm/ rho_ur part!
 
@@ -656,7 +648,7 @@ void loadBGFunctions(background & class_background, mg_cosmology & quintessence,
     //   bgcol = bgcol-1;
     // }
 
-	if (zcol < 0 || bgcol < 0 || ((strncmp(qname,"H_prime",strlen("H_prime")) == 0) && bgcol2 < 0) || ((strncmp(qname,"w_mg",strlen("w_mg")) == 0) && bgcol2 < 0) || ((strncmp(qname,"Omega_m",strlen("Omega_m")) == 0) && bgcol2 < 0 && bgcol3 < 0) || ((strncmp(qname,"Omega_rad",strlen("Omega_rad")) == 0) && bgcol2 < 0) || ((strncmp(qname,"Omega_mg",strlen("Omega_mg")) == 0) && bgcol2 < 0))
+	if (zcol < 0 || bgcol < 0  || ((strncmp(qname,"w_mg",strlen("w_mg")) == 0) && bgcol2 < 0) || ((strncmp(qname,"Omega_m",strlen("Omega_m")) == 0) && bgcol2 < 0 && bgcol3 < 0) || ((strncmp(qname,"Omega_rad",strlen("Omega_rad")) == 0) && bgcol2 < 0) || ((strncmp(qname,"Omega_mg",strlen("Omega_mg")) == 0) && bgcol2 < 0))
 	{
 		COUT << " error in loadBGFunctions (HAVE_CLASS_BG)! Unable to identify requested columns!" << endl;
 		parallel.abortForce();
@@ -683,9 +675,12 @@ void loadBGFunctions(background & class_background, mg_cosmology & quintessence,
 	for (int i = bg_size; i < class_background.bt_size; i++)
 	{
 		a[i-bg_size] = 1./(1. + data[i*cols + zcol]);
+
     if (strncmp(qname,"H_prime",strlen("H_prime")) == 0)
     {
-      bg[i-bg_size] = -(1.0/2.0) * a[i-bg_size] * a[i-bg_size] *  (data[i*cols + bgcol] + 3.0 * data[i*cols + bgcol2]) * sqrt(2.*fourpiG/3.) * sqrt(2.*fourpiG/3.)/data[(class_background.bt_size-1)*cols + Hcol]/data[(class_background.bt_size-1)*cols + Hcol];
+      // bg[i-bg_size] = -(1.0/2.0) * a[i-bg_size] * a[i-bg_size] *  (data[i*cols + bgcol] + 3.0 * data[i*cols + bgcol2]) * sqrt(2.*fourpiG/3.) * sqrt(2.*fourpiG/3.)/data[(class_background.bt_size-1)*cols + Hcol]/data[(class_background.bt_size-1)*cols + Hcol];
+      bg[i-bg_size] = a[i-bg_size] * data[i*cols + bgcol] + a[i-bg_size] * a[i-bg_size] * data[i*cols + Hcol] * data[i*cols + Hcol];
+      bg[i-bg_size] *=  (sqrt(2.*fourpiG/3.)/data[(class_background.bt_size-1)*cols + Hcol]) * (sqrt(2.*fourpiG/3.)/data[(class_background.bt_size-1)*cols + Hcol]) ; // Correcting the unit
     }
     else if (strncmp(qname,"w_mg",strlen("w_mg")) == 0)
     {

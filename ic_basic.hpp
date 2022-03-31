@@ -1746,11 +1746,11 @@ void generateIC_basic(metadata & sim, icsettings & ic, cosmology & cosmo, mg_cos
 //////////////////////////////////////////////////////
  ////quintessence IC part//////
  //////////////////////////////////////////////////////
- double mg_field = gsl_spline_eval(quintessence.spline_mg_field, a, quintessence.acc_mg_field);
- double mg_field_prime = gsl_spline_eval(quintessence.spline_mg_field_p, a, quintessence.acc_mg_field_p);
- // double mg_field_prime_prime = mg_field_bk_pp_rk4(a, fourpiG, cosmo, Hconf_quintessence*a, mg_field, mg_field_prime, quintessence.mg_alpha, quintessence.mg_Lambda, quintessence.mg_sigma);
- double mg_field_prime_prime = gsl_spline_eval(quintessence.spline_mg_field_pp, a, quintessence.acc_mg_field_pp);
+ double mg_field = gsl_spline_eval(quintessence.spline_mg_field, a, quintessence.acc_mg_field); // phi [dimensionless]
+ double mg_field_prime = gsl_spline_eval(quintessence.spline_mg_field_p, a, quintessence.acc_mg_field_p); // phi [1/T] (in gev units) so it is already multiplied by the correct constant to go in gev unit phi'(gev)[1/T] =  phi_prime (hiclass)[1/T] * H_0(gev)/H_0(hiclass)
+ double mg_field_prime_prime = gsl_spline_eval(quintessence.spline_mg_field_pp, a, quintessence.acc_mg_field_pp); // phi [1/T^2] (in gev units)
  double delta_phi;
+ double delta_phi_prime;
  gsl_spline * tk_d_mg = NULL;
  gsl_spline * tk_t_mg = NULL;
  double * scalar_field = NULL;
@@ -1767,17 +1767,19 @@ void generateIC_basic(metadata & sim, icsettings & ic, cosmology & cosmo, mg_cos
  loadTransferFunctions(class_background, class_perturbs, quintessence, tk_d_mg, tk_t_mg, "vx", sim.boxsize, sim.z_in, cosmo.h);
  npts = tk_d_mg->size;
  k_mg = (double *) malloc (npts * sizeof(double));
- scalar_field = (double *) malloc(npts * sizeof(double)); // v_x = a* delta phi/phi' [T]// v_x_prime has dimension of [1], scalar_field [1], scalar_field_prime [1/T].
+ scalar_field = (double *) malloc(npts * sizeof(double)); // v_x = a* delta phi/phi'// delta phi (gev) [dimensionless] = V_X [hiclass][Time] * phi_prime[1/Time]/a  * sqrt(8 pi G).
+ // v_x_prime has dimension of [1], scalar_field [1], scalar_field_prime [1/T].
  scalar_field_prime = (double *) malloc(npts * sizeof(double)); // delta phi_prime = [1/T]
  for (i = 0; i < npts; i++)
  {
    k_mg[i] = tk_d_mg -> x[i];
 
-   delta_phi = tk_d_mg->y[i] * (mg_field_prime/a) * (H0_hiclass/H0_gev) ; //Eq. 2.16 of 1605.06102, T_v_smg * mg_field_prime is dimensionless, the factor is because of mg_field_prime being in gevolution units.
-   scalar_field[i] =  - M_PI * delta_phi * sqrt(Pk_primordial(tk_d_mg->x[i] * cosmo.h / sim.boxsize, ic)/ tk_d_mg->x[i])  / tk_d_mg->x[i];
-   scalar_field_prime[i] = ((mg_field_prime)) * M_PI *  sqrt( Pk_primordial(tk_t_mg->x[i] * cosmo.h / sim.boxsize, ic)/ tk_t_mg->x[i])/ tk_t_mg->x[i];
+   delta_phi = tk_d_mg->y[i]; //* (mg_field_prime/a) * (H0_hiclass/H0_gev) ; // NOTE: delta phi [gev] [1] = phi'[gev][1/T]/a * V_X (gev)[T] to have V_X(gev)[T] = V_X[hiclass][T] * H_0 [hiclass]/H0[gev] also phi'[gev][1/T] is already in gev unit. We could equivalently use everything in hiclass units and obtain delta phi [dimensionless] which can be used in gevolution as well
+   // To sum: delta phi [gev] [1] = phi'[gev][1/T]/a *  V_X[hiclass][T] * H_0 [hiclass]/H0[gev]
+   delta_phi_prime =  (mg_field_prime/a) * tk_t_mg->y[i] +  delta_phi * (mg_field_prime_prime/mg_field_prime - Hconf_quintessence); //delta phi'[gev] [1/T] = phi'[gev][1/T]/a * V_X'[1] + delta phi_gev[1] * (phi''[gev][1/T^2]/phi'[gev][1/T] - H_gev[1/T])
 
-   //- (M_PI/a)   * (tk_t_mg->y[i] * mg_field_prime   + tk_d_mg->y[i]  *  ( -Hconf_quintessence * mg_field_prime  + mg_field_prime_prime )) * sqrt( Pk_primordial(tk_t_mg->x[i] * cosmo.h / sim.boxsize, ic)/ tk_t_mg->x[i])/ tk_t_mg->x[i];
+   scalar_field[i] =  - M_PI * delta_phi * sqrt(Pk_primordial(tk_d_mg->x[i] * cosmo.h / sim.boxsize, ic)/ tk_d_mg->x[i])  / tk_d_mg->x[i];
+   scalar_field_prime[i] = - M_PI * delta_phi_prime * sqrt( Pk_primordial(tk_t_mg->x[i] * cosmo.h / sim.boxsize, ic)/ tk_t_mg->x[i])/ tk_t_mg->x[i];
  }
  // Field realization
  gsl_spline_free(tk_d_mg);

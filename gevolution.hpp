@@ -350,7 +350,7 @@ void prepareFTsource_Quintessence(Field<FieldType> & phi, Field<FieldType> & Tij
   double V_prime_varphi = - sigma * Lambda * Lambda * Lambda * Lambda * pow(varphi_bg, -sigma-1.);
 
   // Coefficients:
-  double beta_coeff = -3. * ( Hcon * (1. + f_varphi) + .5 * varphi_prime_bg * f_prime_varphi) ;
+  double beta_coeff = -3. * ( 1. + f_varphi + .5 * varphi_prime_bg * f_prime_varphi) ;
   #ifndef PHINONLINEAR
   COUT << COLORTEXT_RED << " ERROR" << COLORTEXT_RESET << ": You asked for LINEAR PHI while the Equintessence equations are written up using the PHINONLINEAR!" << endl;
   parallel.abortForce();
@@ -504,6 +504,7 @@ void prepareFTsource_Quintessence(Field<FieldType> & phi, Field<FieldType> & chi
 	{
     alpha_coeff = 6. * phi(x) * (1. + f_varphi) + f_varphi + f_prime_varphi * pi(x); // Alpha should be kept at full order because  (fourpiG/a) * (source(x) - bgmodel)/(1.+alpha_coeff)
     nu_coeff = -.5 * f_prime_varphi;
+
     if (non_linearity == 1)
     {
       nu_coeff += -2. * f_prime_varphi * phi(x) - .5 * f_ddprime_varphi * pi(x) ;
@@ -667,23 +668,21 @@ void update_V_pi(Field<FieldType> & phi, Field<FieldType> & phi_old, Field<Field
     double V_prime_varphi = - sigma * Lambda * Lambda * Lambda * Lambda * pow(varphi_bg, -sigma-1.);
     double V_ddprime_varphi = sigma * (sigma + 1.0) * Lambda * Lambda * Lambda * Lambda * pow(varphi_bg, -sigma-2.);
     double M_pl2 = .5/fourpiG;
-    double gamma = (2./3./M_pl2) * (1. + f_varphi + 3.* M_pl2 *f_prime_varphi * f_prime_varphi/2.);
-    double coeff_C = -(2. * Hcon + 2. * (varphi_prime_bg * f_prime_varphi/ (3. * M_pl2 * gamma)) * (1.+3.* M_pl2 * f_ddprime_varphi) );
-    double coeff_D = - (1./gamma) * ( (Hcon*Hcon+H_prime) * (f_prime_varphi*f_prime_varphi * (2.+3.* M_pl2 *f_ddprime_varphi) - 2.* f_ddprime_varphi * (1.+f_varphi))+ (a*a/3./M_pl2) * (2.*V_ddprime_varphi * (1.+f_varphi)  -  f_prime_varphi*V_prime_varphi * (4.+3.* M_pl2 *f_ddprime_varphi) )  +  varphi_prime_bg * varphi_prime_bg * f_prime_varphi * f_dddprime_varphi);
+    double gamma = (2./3.) * (1. + f_varphi + 3. *f_prime_varphi * f_prime_varphi/2.);
+    double coeff_C = -(2. * Hcon + 2. * (varphi_prime_bg * f_prime_varphi/ (3. * gamma)) * (1.+3. * f_ddprime_varphi) );
+    double coeff_D = - (1./gamma) * ( (Hcon*Hcon+H_prime) * (f_prime_varphi*f_prime_varphi * (2.+3. *f_ddprime_varphi) - 2.* f_ddprime_varphi * (1.+f_varphi))+ (a*a/3.) * (2.*V_ddprime_varphi * (1.+f_varphi)  -  f_prime_varphi*V_prime_varphi * (4.+3. *f_ddprime_varphi) )  +  varphi_prime_bg * varphi_prime_bg * f_prime_varphi * f_dddprime_varphi);
     double coeff_E = 1.;
     double coeff_F =0.;
-    if (non_linearity == 1) coeff_F = (f_prime_varphi/(3.*M_pl2*gamma)) * (1. + 3.*M_pl2*f_ddprime_varphi);
-
-    double coeff_G = (6.*M_pl2*f_prime_varphi*(Hcon*Hcon+H_prime) - 2.*a*a*V_prime_varphi + (1.+3.*M_pl2*f_ddprime_varphi) * (2.*varphi_prime_bg*varphi_prime_bg*f_prime_varphi)/(3.0*M_pl2*gamma));
+    if (non_linearity == 1) coeff_F = (f_prime_varphi/(3.*gamma)) * (1. + 3.*f_ddprime_varphi);
+    double coeff_G = (6.*f_prime_varphi*(Hcon*Hcon+H_prime) - 2.*a*a*V_prime_varphi + (1.+3.*f_ddprime_varphi) * (2.*varphi_prime_bg*varphi_prime_bg*f_prime_varphi)/(3.0*gamma));
     double coeff_H = 0.;
-
     double Laplacian_pi, Laplacian_phi = 0., Gradpi_Gradpi=0.;
     Site x(phi.lattice());
+
     for (x.first(); x.test(); x.next())
       {
         phi_prime = (phi(x)-phi_old(x))/dtau;
         chi_prime = (chi(x)-chi_old(x))/dtau;
-
         Laplacian_pi= pi(x-0) + pi(x+0) - 2. * pi(x);
         Laplacian_pi+=pi(x+1) + pi(x-1) - 2. * pi(x);
         Laplacian_pi+=pi(x+2) + pi(x-2) - 2. * pi(x);
@@ -705,18 +704,17 @@ void update_V_pi(Field<FieldType> & phi, Field<FieldType> & phi_old, Field<Field
             Gradpi_Gradpi+=.25 * (pi(x + 2)  - pi(x - 2)) * (pi(x + 2) - pi(x - 2));
             Gradpi_Gradpi/= dx * dx;
           }
-
-          V_pi(x) = (1. + coeff_C * dtau/2.) * V_pi(x)
-  				+ (dtau/2.) * (coeff_D * pi(x)
-                  + coeff_E * Laplacian_pi
-                  + coeff_F * Gradpi_Gradpi
-                  + varphi_prime_bg *  (4. * phi_prime - chi_prime)
-                  + coeff_G * (phi(x) - chi(x))
-                  + coeff_H * Laplacian_phi
-  				+ a * a * f_prime_varphi/gamma/M_pl2/3. * TiimT00(x));
-          V_pi(x) /= (1. - coeff_C * dtau/2.);
-      }
+      V_pi(x) = (1. + coeff_C * dtau/2.) * V_pi(x)
+      + (dtau/2.) * (coeff_D * pi(x)
+              + coeff_E * Laplacian_pi
+              + coeff_F * Gradpi_Gradpi
+              + varphi_prime_bg *  (4. * phi_prime - chi_prime)
+              + coeff_G * (phi(x) - chi(x))
+              + coeff_H * Laplacian_phi
+      + a * a * f_prime_varphi/gamma/M_pl2/3. * TiimT00(x));
+      V_pi(x) /= (1. - coeff_C * dtau/2.);
   }
+}
 
 #ifdef FFT3D
 //////////////////////////
