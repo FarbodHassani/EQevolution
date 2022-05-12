@@ -426,35 +426,34 @@ void loadTransferFunctions(background & class_background, perturbs & class_pertu
 	char kname[8];
 	char * ptr;
   double a = 1./(1.+z);
-  double Hconf_class = gsl_spline_eval(quintessence.spline_H,a,quintessence.acc_H) * (100*h/(C_SPEED_OF_LIGHT*100.))/gsl_spline_eval(quintessence.spline_H,1.0,quintessence.acc_H);
+  double Hconf_class = gsl_spline_eval(quintessence.spline_H,a,quintessence.acc_H) * (100*h/(C_SPEED_OF_LIGHT*100.))/gsl_spline_eval(quintessence.spline_H,1.0,quintessence.acc_H); // Note that 100h/c[km/s] give H[1/Mpc] which is what we want for the gauge transformation.
   double Omega_m = gsl_spline_eval(quintessence.spline_Omega_m,a,quintessence.acc_Omega_m);
   double Omega_rad = gsl_spline_eval(quintessence.spline_Omega_rad,a,quintessence.acc_Omega_rad);
   double Omega_mg = gsl_spline_eval(quintessence.spline_Omega_mg,a,quintessence.acc_Omega_mg);
+  // if (Omega_fld =! 0)
+  // {
+  //   double Omega_fld = gsl_spline_eval(quintessence.spline_Omega_fld,a,quintessence.acc_Omega_fld);
+  //   double w_fld = gsl_spline_eval(quintessence.spline_w_fld,a,quintessence.acc_w_fld);
+  // }
   double w_mg = gsl_spline_eval(quintessence.spline_w_mg,a,quintessence.acc_w_mg);
-
 	perturb_output_titles(&class_background, &class_perturbs, class_format, coltitles);
 
   if (strncmp(qname,"vx",strlen("vx")) == 0)
 	{
 		sprintf(dname, "vx_smg");
 		sprintf(tname, "vx_prime_smg");
-		h /= boxsize;
   }
-
 	else if (qname != NULL)
 	{
 		sprintf(dname, "d_%s", qname);
 		sprintf(tname, "t_%s", qname);
-		h /= boxsize;
   }
-	else
+  else if (qname == NULL)
 	{
-		sprintf(dname, "phi");
-		sprintf(tname, "psi");
-		h = 1.;
+    COUT << " error in loadTransferFunctions (HAVE_CLASS)! why phi/psi columns are requested?!" << endl;
+		parallel.abortForce();
 	}
 	sprintf(kname, "k (h/Mpc)");
-
 
 	ptr = strtok(coltitles, _DELIMITER_);
 	while (ptr != NULL)
@@ -462,7 +461,7 @@ void loadTransferFunctions(background & class_background, perturbs & class_pertu
     if (strncmp(ptr, dname, strlen(dname)) == 0) dcol = cols;
 		else if (strncmp(ptr, tname, strlen(tname)) == 0) tcol = cols;
 		else if (strncmp(ptr, kname, strlen(kname)) == 0) kcol = cols;
-    // quintessence gauge transformation
+    // gauge transformation
     else if (strncmp(ptr, "phi", strlen("phi")) == 0) phicol = cols;
     else if (strncmp(ptr, "psi", strlen("psi")) == 0) psicol = cols;
     else if (strncmp(ptr, "eta_prime", strlen("eta_prime")) == 0) eta_primecol = cols;
@@ -482,53 +481,56 @@ void loadTransferFunctions(background & class_background, perturbs & class_pertu
 	k = (double *) malloc(sizeof(double) * class_perturbs.k_size[class_perturbs.index_md_scalars]);
 	tk_d = (double *) malloc(sizeof(double) * class_perturbs.k_size[class_perturbs.index_md_scalars]);
 	tk_t = (double *) malloc(sizeof(double) * class_perturbs.k_size[class_perturbs.index_md_scalars]);
-
 	perturb_output_data(&class_background, &class_perturbs, class_format, z, cols, data);
 
 	for (int i = 0; i < class_perturbs.k_size[class_perturbs.index_md_scalars]; i++)
 	{
 		k[i] = data[i*cols + kcol] * boxsize;
-		tk_d[i] = data[i*cols + dcol];
-
-    if (strncmp(qname,"cdm",strlen("cdm")) != 0)
-    {
-		  tk_t[i] = data[i*cols + tcol] / h;
-    }
-    else
-    {
-      tk_t[i] = 0.;
-    }
+    alpha = (data[i*cols + h_primecol] + 6.0*data[i*cols + eta_primecol])/(2.0*data[i*cols + kcol]*data[i*cols + kcol]*h*h);// Note that in hiclass k and time derivative do not have the same unit, there is an h difference which is corrected. prime is [1/Mpc] while k[h/Mpc] and k*h give in 1/Mpc
+    alpha_prime = data[i*cols + psicol] + data[i*cols + phicol] - data[i*cols + etacol];
     if (strncmp(qname,"vx",strlen("vx")) == 0)
      {
-      alpha = (data[i*cols + h_primecol] + 6.0*data[i*cols + eta_primecol])/(2.0*data[i*cols + kcol]*data[i*cols + kcol]);
-      alpha_prime =data[i*cols + psicol] + data[i*cols + phicol] - data[i*cols + etacol];
-      tk_d[i] += alpha ;
-      tk_t[i] = data[i*cols + tcol];
-      tk_t[i] += alpha_prime ;
+      tk_d[i] = data[i*cols + dcol] + alpha; // gauge correction NOTE that v_x is in [1/Mpc]
+      tk_t[i] = data[i*cols + tcol] + alpha_prime;// gauge correction
      }
-    else if (qname != NULL)
-    {
-      alpha  = (data[i*cols + h_primecol] + 6.0*data[i*cols + eta_primecol])/(2.0*data[i*cols + kcol]*data[i*cols + kcol]);
-      alpha_prime =  data[i*cols + psicol] + data[i*cols + phicol] - data[i*cols + etacol];
-      tk_t[i] +=  alpha * data[i*cols + kcol]*data[i*cols + kcol] / h;
-      if (strncmp(qname,"g",strlen("g")) || strncmp(qname,"ncdm",strlen("ncdm")) == 0)
-      {
-        tk_d[i] += -alpha * 4. * Hconf_class;
-      }
-      else if (strncmp(qname,"cdm",strlen("cdm")) == 0)
-      {
-        tk_d[i] += -alpha * 3. * Hconf_class;
-      }
-      else if (strncmp(qname,"b",strlen("b")) == 0)
-      {
-        tk_d[i] += -alpha * 3. * Hconf_class;
-      }
-      else if (strncmp(qname,"tot",strlen("tot")) == 0)
-      {
-        tk_d[i] += -alpha * 3. * Hconf_class * (Omega_m + 4. * Omega_rad/3. + Omega_mg * (1. + w_mg));
-      }
-    }
 
+    else if (strncmp(qname,"cdm",strlen("cdm")) == 0) // tk_t cdm is 0 in sync gauge!
+    {
+      tk_d[i] = data[i*cols + dcol] - alpha * 3. * Hconf_class; // gauge correction; [alpha]=Mpc and H[1/Mpc]!
+      tk_t[i] = (alpha * data[i*cols + kcol] * h * data[i*cols + kcol] * h) * boxsize/h;// gauge correction + converting in gevolution!
+      // boxsize/h --> unit in Mpc
+      // k *h --> 1/Mpc
+      // alpha is in 1/Mpc
+      // unit as tk_t in hiclass is 1/Mpc and alpha = (h_prime[1/Mpc] + 6.*eta_prime[1/Mpc])/(2.*k[h/Mpc]*h*k[h/Mpc]*h); Results in  [alpha] = Mpc and [alpha k*h * k *h] = Mpc * 1/Mpc^2 = 1/Mpc
+      // Also note that tk_t[i] is in 1/Mpc in class
+      // boxsize[Mpc/h] / h give boxsize in Mpc. so at the end we have tk_t in gevolution without unit.
+    }
+    else if (strncmp(qname,"b",strlen("b")) == 0)
+    {
+      tk_d[i] = data[i*cols + dcol] - alpha * 3. * Hconf_class;
+      tk_t[i] = (data[i*cols + tcol] + alpha * data[i*cols + kcol] * h * data[i*cols + kcol] * h) * boxsize/h;
+    }
+    // else if (strncmp(qname,"fld",strlen("fld")) != 0)
+    // {
+    //   tk_d[i] = data[i*cols + dcol] - alpha * 3. * (1+ w_fld) * Hconf_class;
+    //   tk_t[i] = (data[i*cols + tcol] + alpha * data[i*cols + kcol] * h * data[i*cols + kcol] * h) * boxsize/h;
+    // }
+    else if (strncmp(qname,"g",strlen("g")) == 0)
+    {
+      tk_d[i] = data[i*cols + dcol] - alpha * 4. * Hconf_class;
+      tk_t[i] = (data[i*cols + tcol] + alpha * data[i*cols + kcol] * h * data[i*cols + kcol] * h) * boxsize/h;
+    }
+    else if (strncmp(qname,"ur",strlen("ur")) == 0)
+    {
+      tk_d[i] = data[i*cols + dcol] - alpha * 4. * Hconf_class;
+      tk_t[i] = (data[i*cols + tcol] + alpha * data[i*cols + kcol] * h * data[i*cols + kcol] * h) * boxsize/h;
+    }
+    else if (strncmp(qname,"tot",strlen("tot")) == 0)
+    {
+      tk_d[i] = data[i*cols + dcol] - alpha * 3 * (Omega_mg * (1. + w_mg) + Omega_m + Omega_rad * (1.+1./3.)) * Hconf_class;
+      // Omega_fld*(1. + w_fld)  fld part is not included!
+      tk_t[i] = (data[i*cols + tcol] + alpha * data[i*cols + kcol] * h * data[i*cols + kcol] * h) * boxsize/h;
+    }
 		if (i > 0)
 		{
 			if (k[i] < k[i-1])
@@ -614,6 +616,12 @@ void loadBGFunctions(background & class_background, mg_cosmology & quintessence,
       else if (strncmp(ptr, "(.)rho_tot", strlen("(.)rho_tot")) == 0) bgcol2 = cols;
       else if (strncmp(ptr, zname, strlen(zname)) == 0) zcol = cols;
     }
+    // else if (strncmp(qname,"Omega_fld",strlen("Omega_fld")) == 0)
+    // {
+    //   if (strncmp(ptr, "(.)rho_fld", strlen("(.)rho_fld")) == 0) bgcol = cols;
+    //   else if (strncmp(ptr, "(.)rho_tot", strlen("(.)rho_tot")) == 0) bgcol2 = cols;
+    //   else if (strncmp(ptr, zname, strlen(zname)) == 0) zcol = cols;
+    // }
     else if (strncmp(qname,"Omega_m",strlen("Omega_m")) == 0)
     {
       if (strncmp(ptr, "(.)rho_cdm", strlen("(.)rho_cdm")) == 0) bgcol = cols;
@@ -624,7 +632,8 @@ void loadBGFunctions(background & class_background, mg_cosmology & quintessence,
     else if (strncmp(qname,"Omega_rad",strlen("Omega_rad")) == 0)
     {
       if (strncmp(ptr, "(.)rho_g", strlen("(.)rho_g")) == 0) bgcol = cols;
-      else if (strncmp(ptr, "(.)rho_tot", strlen("(.)rho_tot")) == 0) bgcol2 = cols;
+      else if (strncmp(ptr, "(.)rho_ur", strlen("(.)rho_ur")) == 0) bgcol2 = cols;
+      else if (strncmp(ptr, "(.)rho_tot", strlen("(.)rho_tot")) == 0) bgcol3 = cols;
       else if (strncmp(ptr, zname, strlen(zname)) == 0) zcol = cols;
     }
     else if (strncmp(qname,"conf. time [Mpc]",strlen("conf. time [Mpc]")) == 0 || strncmp(qname,"scale factor",strlen("scale factor")) == 0)
@@ -643,10 +652,6 @@ void loadBGFunctions(background & class_background, mg_cosmology & quintessence,
 		cols++;
     ptr = strtok(NULL, _DELIMITER_);
     }
-    // if (strncmp(qname,"phi\'",strlen("phi\'")) == 0 && bgcol2<0)
-    // {
-    //   bgcol = bgcol-1;
-    // }
 
 	if (zcol < 0 || bgcol < 0  || ((strncmp(qname,"w_mg",strlen("w_mg")) == 0) && bgcol2 < 0) || ((strncmp(qname,"Omega_m",strlen("Omega_m")) == 0) && bgcol2 < 0 && bgcol3 < 0) || ((strncmp(qname,"Omega_rad",strlen("Omega_rad")) == 0) && bgcol2 < 0) || ((strncmp(qname,"Omega_mg",strlen("Omega_mg")) == 0) && bgcol2 < 0))
 	{
@@ -678,7 +683,6 @@ void loadBGFunctions(background & class_background, mg_cosmology & quintessence,
 
     if (strncmp(qname,"H_prime",strlen("H_prime")) == 0)
     {
-      // bg[i-bg_size] = -(1.0/2.0) * a[i-bg_size] * a[i-bg_size] *  (data[i*cols + bgcol] + 3.0 * data[i*cols + bgcol2]) * sqrt(2.*fourpiG/3.) * sqrt(2.*fourpiG/3.)/data[(class_background.bt_size-1)*cols + Hcol]/data[(class_background.bt_size-1)*cols + Hcol];
       bg[i-bg_size] = a[i-bg_size] * data[i*cols + bgcol] + a[i-bg_size] * a[i-bg_size] * data[i*cols + Hcol] * data[i*cols + Hcol];
       bg[i-bg_size] *=  (sqrt(2.*fourpiG/3.)/data[(class_background.bt_size-1)*cols + Hcol]) * (sqrt(2.*fourpiG/3.)/data[(class_background.bt_size-1)*cols + Hcol]) ; // Correcting the unit
     }
@@ -690,17 +694,21 @@ void loadBGFunctions(background & class_background, mg_cosmology & quintessence,
     {
       bg[i-bg_size] = data[i*cols + bgcol]/data[i*cols + bgcol2];
     }
+    // else if (strncmp(qname,"Omega_fld",strlen("Omega_fld")) == 0)
+    // {
+    //   bg[i-bg_size] = data[i*cols + bgcol]/data[i*cols + bgcol2];
+    // }
     else if (strncmp(qname,"Omega_m",strlen("Omega_m")) == 0)
     {
       bg[i-bg_size] = (data[i*cols + bgcol] + data[i*cols + bgcol2])/data[i*cols + bgcol3];
     }
     else if (strncmp(qname,"Omega_rad",strlen("Omega_rad")) == 0)
     {
-      bg[i-bg_size] = data[i*cols + bgcol]/data[i*cols + bgcol2];
+      bg[i-bg_size] = (data[i*cols + bgcol] + data[i*cols + bgcol2])/data[i*cols + bgcol3];
     }
    else
 		{
-        bg[i-bg_size] = data[i*cols + bgcol];
+      bg[i-bg_size] = data[i*cols + bgcol];
     }
     if (strncmp(qname,"H [1/Mpc]",strlen("H [1/Mpc]")) == 0)
     {

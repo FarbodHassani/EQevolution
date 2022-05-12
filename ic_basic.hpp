@@ -1773,11 +1773,10 @@ void generateIC_basic(metadata & sim, icsettings & ic, cosmology & cosmo, mg_cos
  for (i = 0; i < npts; i++)
  {
    k_mg[i] = tk_d_mg -> x[i];
-
-   delta_phi = tk_d_mg->y[i]; //* (mg_field_prime/a) * (H0_hiclass/H0_gev) ; // NOTE: delta phi [gev] [1] = phi'[gev][1/T]/a * V_X (gev)[T] to have V_X(gev)[T] = V_X[hiclass][T] * H_0 [hiclass]/H0[gev] also phi'[gev][1/T] is already in gev unit. We could equivalently use everything in hiclass units and obtain delta phi [dimensionless] which can be used in gevolution as well
+   delta_phi = tk_d_mg->y[i] * (mg_field_prime/a) * (H0_hiclass/H0_gev);
+   // delta_phi = tk_d_mg->y[i] * (mg_field_prime/a) * (H0_hiclass/H0_gev) ; // NOTE: delta phi [gev] [1] = phi'[gev][1/T]/a * V_X (gev)[T] to have V_X(gev)[T] = V_X[hiclass][T] * H_0 [hiclass]/H0[gev] also phi'[gev][1/T] is already in gev unit. We could equivalently use everything in hiclass units and obtain delta phi [dimensionless] which can be used in gevolution as well
    // To sum: delta phi [gev] [1] = phi'[gev][1/T]/a *  V_X[hiclass][T] * H_0 [hiclass]/H0[gev]
-   delta_phi_prime =  (mg_field_prime/a) * tk_t_mg->y[i] +  delta_phi * (mg_field_prime_prime/mg_field_prime - Hconf_quintessence); //delta phi'[gev] [1/T] = phi'[gev][1/T]/a * V_X'[1] + delta phi_gev[1] * (phi''[gev][1/T^2]/phi'[gev][1/T] - H_gev[1/T])
-
+   delta_phi_prime = (mg_field_prime/a) * tk_t_mg->y[i] +  delta_phi * (mg_field_prime_prime/mg_field_prime - Hconf_quintessence); //delta phi'[gev] [1/T] = phi'[gev][1/T]/a * V_X'[1] + delta phi_gev[1] * (phi''[gev][1/T^2]/phi'[gev][1/T] - H_gev[1/T])
    scalar_field[i] =  - M_PI * delta_phi * sqrt(Pk_primordial(tk_d_mg->x[i] * cosmo.h / sim.boxsize, ic)/ tk_d_mg->x[i])  / tk_d_mg->x[i];
    scalar_field_prime[i] = - M_PI * delta_phi_prime * sqrt( Pk_primordial(tk_t_mg->x[i] * cosmo.h / sim.boxsize, ic)/ tk_t_mg->x[i])/ tk_t_mg->x[i];
  }

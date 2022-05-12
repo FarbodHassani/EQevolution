@@ -533,8 +533,20 @@ int main(int argc, char **argv)
   phi_bg = gsl_spline_eval(quintessence.spline_mg_field, a, quintessence.acc_mg_field);
   phi_p_bg = gsl_spline_eval(quintessence.spline_mg_field_p, a, quintessence.acc_mg_field_p);
   phi_pp_bg = gsl_spline_eval(quintessence.spline_mg_field_pp, a, quintessence.acc_mg_field_pp);
+  writeSpectra(sim, cosmo, quintessence, fourpiG, a, pkcount,
+#ifdef HAVE_CLASS
+    class_background, class_perturbs, ic,
+#endif
+    &pcls_cdm, &pcls_b, pcls_ncdm, &phi, &pi, &V_pi, &chi, &Bi, &source, &Sij, &scalarFT, &scalarFT_pi, &scalarFT_V_pi,  &BiFT, &SijFT, &plan_phi, &plan_pi, &plan_V_pi, &plan_chi, &plan_Bi, &plan_source, &plan_Sij
+#ifdef CHECK_B
+    , &Bi_check, &BiFT_check, &plan_Bi_check
+#endif
+#ifdef VELOCITY
+    , &vi, &viFT, &plan_vi
+#endif
+  );
 
-	while (true)    // main loop
+	while (false)    // main loop
 	{
     for (x.first(); x.test(); x.next())
     {
@@ -727,8 +739,8 @@ int main(int argc, char **argv)
       phi_p_bg = phi_p_bg + dtau * phi_pp_bg/2.;
 		}
 		// done recording background data
-		// prepareFTsource<Real>(phi, Sij, Sij, 2. * fourpiG * dx * dx / a);  // prepare nonlinear source for additional equations
-    prepareFTsource_Tii<Real>(phi, source, Sij, Sij, TiimT00, 2. * fourpiG * dx * dx / a);  // prepare nonlinear source for additional equations
+		prepareFTsource<Real>(phi, Sij, Sij, 2. * fourpiG * dx * dx / a);  // prepare nonlinear source for additional equations
+    // prepareFTsource_Tii<Real>(phi, source, Sij, Sij, TiimT00, 2. * fourpiG * dx * dx / a);  // prepare nonlinear source for additional equations
     // prepareFTsource_Quintessence(phi, Sij, Sij, chi, pi, V_pi, mg_field, mg_field_prime, alpha, Lambda, sigma, Hconf_quintessence, fourpiG, a, dx, dtau_old);
 
 

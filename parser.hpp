@@ -1582,6 +1582,9 @@ int parseMetadata(parameter * & params, const int numparam, metadata & sim, cosm
 	{
 		if (par_string[0] == 'N' || par_string[0] == 'n')
 		{
+      COUT << "\033[1;31m ERROR:\n";
+      COUT<< "In the current code you cannot use Newtonian version of gevolution. You should use gevolution for this! \033[0m" << endl;
+
 			COUT << " gravity theory set to: " << COLORTEXT_CYAN << "Newtonian" << COLORTEXT_RESET << endl;
 			sim.gr_flag = 0;
 			if (ic.pkfile[0] == '\0' && ic.tkfile[0] != '\0'
@@ -1644,6 +1647,13 @@ int parseMetadata(parameter * & params, const int numparam, metadata & sim, cosm
   if (!parseParameter(params, numparam, "quintessence non-linear", quintessence.NL_quintessence))
   	quintessence.NL_quintessence = 0; //Default is linear quintessence.
 
+    if( parseParameter(params, numparam, "m_ncdm", cosmo.m_ncdm, cosmo.num_ncdm) )
+    {
+      COUT << "\033[1;31m ERROR:\n";
+      COUT<< "In the current code you cannot have ncdm particles. This implmenetation needs to be done carefully! Especially the gauge transformation needs tobe done! \033[0m" << endl;
+      parallel.abortForce();
+    }
+
 	cosmo.num_ncdm = MAX_PCL_SPECIES-2;
 	if (!parseParameter(params, numparam, "m_ncdm", cosmo.m_ncdm, cosmo.num_ncdm))
 	{
@@ -1653,6 +1663,9 @@ int parseMetadata(parameter * & params, const int numparam, metadata & sim, cosm
 
 	if (parseParameter(params, numparam, "N_ncdm", i))
 	{
+    COUT << "\033[1;31m ERROR:\n";
+    COUT<< "In the current code you cannot have ncdm particles. This implmenetation needs to be done carefully! Especially the gauge transformation needs tobe done! \033[0m" << endl;
+    parallel.abortForce();
 		if (i < 0 || !isfinite(i))
 		{
 			COUT << COLORTEXT_RED << " error" << COLORTEXT_RESET << ": number of ncdm species not set properly!" << endl;
@@ -1721,22 +1734,37 @@ int parseMetadata(parameter * & params, const int numparam, metadata & sim, cosm
 
 	cosmo.Omega_rad = cosmo.Omega_g + cosmo.Omega_ur;
 
-	if (parseParameter(params, numparam, "omega_fld", cosmo.Omega_fld))
-		cosmo.Omega_fld /= cosmo.h * cosmo.h;
-	else if (!parseParameter(params, numparam, "Omega_fld", cosmo.Omega_fld))
-		cosmo.Omega_fld = 0.;
-	if (!parseParameter(params, numparam, "w0_fld", cosmo.w0_fld))
-		cosmo.w0_fld = -1.;
-	if (!parseParameter(params, numparam, "wa_fld", cosmo.wa_fld))
-		cosmo.wa_fld = 0.;
-	if (!parseParameter(params, numparam, "cs2_fld", cosmo.cs2_fld))
-		cosmo.cs2_fld = 1.;
-
-	if (cosmo.Omega_fld > 0 && cosmo.w0_fld == -1.)
-	{
-		COUT << COLORTEXT_YELLOW << " /!\\ warning" << COLORTEXT_RESET << ": w0_fld = -1 is singular, setting Omega_fld = 0." << endl;
-		cosmo.Omega_fld = 0.;
-	}
+  // No fld in the current implementation:
+  if(parseParameter(params, numparam, "omega_fld", cosmo.Omega_fld)|| parseParameter(params, numparam, "Omega_fld", cosmo.Omega_fld) || parseParameter(params, numparam, "w0_fld", cosmo.w0_fld) || parseParameter(params, numparam, "wa_fld", cosmo.wa_fld) || parseParameter(params, numparam, "cs2_fld", cosmo.wa_fld))
+  {
+    COUT << "\033[1;31m ERROR:\n";
+    COUT<< "In the current code you cannot add DE fluid. This implmenetation needs to be done carefully! \033[0m" << endl;
+    parallel.abortForce();
+  }
+	// if (parseParameter(params, numparam, "omega_fld", cosmo.Omega_fld))
+  // {
+	// 	cosmo.Omega_fld /= cosmo.h * cosmo.h;
+  // }
+	// else if (!parseParameter(params, numparam, "Omega_fld", cosmo.Omega_fld))
+  // {
+	// 	cosmo.Omega_fld = 0.;
+  // }
+	// if (!parseParameter(params, numparam, "w0_fld", cosmo.w0_fld))
+	// 	cosmo.w0_fld = -1.;
+	// if (!parseParameter(params, numparam, "wa_fld", cosmo.wa_fld))
+	// 	cosmo.wa_fld = 0.;
+	// if (!parseParameter(params, numparam, "cs2_fld", cosmo.cs2_fld))
+	// 	cosmo.cs2_fld = 1.;
+	// if (cosmo.Omega_fld > 0 && cosmo.w0_fld == -1.)
+	// {
+	// 	COUT << COLORTEXT_YELLOW << " /!\\ warning" << COLORTEXT_RESET << ": w0_fld = -1 is singular, setting Omega_fld = 0." << endl;
+	// 	cosmo.Omega_fld = 0.;
+	// }
+  // if (cosmo.Omega_fld > 0)
+  // {
+  //   COUT << COLORTEXT_YELLOW << " /!\\ Error:" << COLORTEXT_RESET << "In the current code you cannot add DE fluid. This implmenetation needs to be done carefully!" << endl;
+  //   parallel.abortForce();
+  // }
 
 	if (parseParameter(params, numparam, "omega_b", cosmo.Omega_b))
 	{

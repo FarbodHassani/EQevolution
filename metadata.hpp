@@ -311,7 +311,9 @@ struct mg_cosmology
   std::vector<double> H_vec;
 	std::vector<double> H_prime_vec;
 	std::vector<double> w_mg_vec;
+  // std::vector<double> w_fld_vec;
 	std::vector<double> Omega_m_vec;
+  // std::vector<double> Omega_fld_vec;
 	std::vector<double> Omega_rad_vec;
 	std::vector<double> Omega_mg_vec;
   std::vector<double> mg_field_vec;
@@ -323,9 +325,11 @@ struct mg_cosmology
   double * H;
 	double * H_prime;
 	double * w_mg;
+  double * w_fld;
 	double * Omega_m;
 	double * Omega_rad;
 	double * Omega_mg;
+  // double * Omega_fld;
   double * mg_field;
   double * mg_field_p;
   double * particleHorizon;
@@ -340,6 +344,10 @@ struct mg_cosmology
   gsl_spline * spline_H_prime;
 	gsl_interp_accel * acc_w_mg;
   gsl_spline * spline_w_mg;
+  // gsl_interp_accel * acc_w_fld;
+  // gsl_spline * spline_w_fld;
+  // gsl_interp_accel * acc_Omega_fld;
+  // gsl_spline * spline_Omega_fld;
 	gsl_interp_accel * acc_Omega_m;
   gsl_spline * spline_Omega_m;
 	gsl_interp_accel * acc_Omega_rad;

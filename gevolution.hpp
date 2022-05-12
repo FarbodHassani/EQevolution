@@ -711,7 +711,7 @@ void update_V_pi(Field<FieldType> & phi, Field<FieldType> & phi_old, Field<Field
               + varphi_prime_bg *  (4. * phi_prime - chi_prime)
               + coeff_G * (phi(x) - chi(x))
               + coeff_H * Laplacian_phi
-      + a * a * f_prime_varphi/gamma/M_pl2/3. * TiimT00(x));
+      + a * a * f_prime_varphi/gamma/3. * TiimT00(x));
       V_pi(x) /= (1. - coeff_C * dtau/2.);
   }
 }
