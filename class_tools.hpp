@@ -110,12 +110,10 @@ void initializeCLASSstructures(metadata & sim, icsettings & ic, cosmology & cosm
 	sprintf(class_filecontent.value[i++], "%f", ic.n_s);
 
 	sprintf(class_filecontent.name[i], "z_pk");
-  sprintf(class_filecontent.value[i++], "100.0");
-
-	// if (ic.z_ic > sim.z_in)
-	// 	sprintf(class_filecontent.value[i++], "%f, %f, 0", 1.015 * ic.z_ic + 0.01, sim.z_in);
-	// else
-	// 	sprintf(class_filecontent.value[i++], "%f, 0", 1.015 * ic.z_ic + 0.01);
+	if (ic.z_ic > sim.z_in)
+		sprintf(class_filecontent.value[i++], "%f, %f, 0", 1.015 * ic.z_ic + 0.01, sim.z_in);
+	else
+		sprintf(class_filecontent.value[i++], "%f, 0", 1.015 * ic.z_ic + 0.01);
 
 	sprintf(class_filecontent.name[i], "output");
 	sprintf(class_filecontent.value[i++], "%s", output_value);
