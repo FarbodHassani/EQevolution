@@ -1993,7 +1993,9 @@ Particles_gevolution<part_simple,part_simple_info,part_simple_dataType> * pcls_c
      plan_pi->execute(FFT_FORWARD);
      extractPowerSpectrum(*scalarFT_pi , kbin, power, kscatter, pscatter, occupation, sim.numbins, true, KTYPE_LINEAR);
      sprintf(filename, "%s%s%03d_pi.dat", sim.output_path, sim.basename_pk, pkcount);
-     writePowerSpectrum(kbin, power, kscatter, pscatter, occupation, sim.numbins, sim.boxsize, (Real) numpts3d * (Real) numpts3d * 2. * M_PI * M_PI, filename, "power spectrum of mg field (dimensionless)", a, sim.z_pk[pkcount]);
+     // writePowerSpectrum(kbin, power, kscatter, pscatter, occupation, sim.numbins, sim.boxsize, (Real) numpts3d * (Real) numpts3d * 2. * M_PI * M_PI, filename, "power spectrum of mg field (dimensionless)", a, sim.z_pk[pkcount]);
+     //TEST:
+     writePowerSpectrum(kbin, power, kscatter, pscatter, occupation, sim.numbins, sim.boxsize, (Real) numpts3d * (Real) numpts3d * 2. * M_PI * M_PI/sqrt(2.*fourpiG/3.)/sqrt(2.*fourpiG/3.), filename, "power spectrum of mg field (dimensionless)", a, sim.z_pk[pkcount]);
    }
 
    if (sim.out_pk & MASK_V_PI)
@@ -2001,7 +2003,9 @@ Particles_gevolution<part_simple,part_simple_info,part_simple_dataType> * pcls_c
      plan_V_pi->execute(FFT_FORWARD);
      extractPowerSpectrum(*scalarFT_V_pi, kbin, power, kscatter, pscatter, occupation, sim.numbins, true, KTYPE_LINEAR);
      sprintf(filename, "%s%s%03d_V_pi.dat", sim.output_path, sim.basename_pk, pkcount);
-     writePowerSpectrum(kbin, power, kscatter, pscatter, occupation, sim.numbins, sim.boxsize, (Real) numpts3d * (Real) numpts3d * 2. * M_PI * M_PI * sqrt(2.*fourpiG/3.) * sqrt(2.*fourpiG/3.), filename, "power spectrum of deltaphi'/H_0 (dimensionless)", a, sim.z_pk[pkcount]);
+     // writePowerSpectrum(kbin, power, kscatter, pscatter, occupation, sim.numbins, sim.boxsize, (Real) numpts3d * (Real) numpts3d * 2. * M_PI * M_PI * sqrt(2.*fourpiG/3.) * sqrt(2.*fourpiG/3.), filename, "power spectrum of deltaphi'/H_0 (dimensionless)", a, sim.z_pk[pkcount]);
+     // TEST:
+     writePowerSpectrum(kbin, power, kscatter, pscatter, occupation, sim.numbins, sim.boxsize, (Real) numpts3d * (Real) numpts3d * 2. * M_PI * M_PI, filename, "power spectrum of deltaphi'/H_0 (dimensionless)", a, sim.z_pk[pkcount]);
    }
 
 	if (sim.out_pk & MASK_CHI)

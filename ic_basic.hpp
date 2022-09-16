@@ -1651,7 +1651,13 @@ void generateIC_basic(metadata & sim, icsettings & ic, cosmology & cosmo, mg_cos
 	char ncdm_name[8];
 	Field<Real> * ic_fields[2];
 
-	double Hconf_quintessence = gsl_spline_eval(quintessence.spline_H,a,quintessence.acc_H);
+  double H0 =gsl_spline_eval(quintessence.spline_H,1.0,quintessence.acc_H); gsl_spline_eval(quintessence.spline_H,a,quintessence.acc_H);
+	double Hc = gsl_spline_eval(quintessence.spline_H,a,quintessence.acc_H);
+  double Hc098 = gsl_spline_eval(quintessence.spline_H,0.98 * a,quintessence.acc_H);
+  double Hc099 = gsl_spline_eval(quintessence.spline_H,0.99 * a,quintessence.acc_H);
+  double Hc0995 = gsl_spline_eval(quintessence.spline_H,0.995 * a,quintessence.acc_H);
+  double Hc101 = gsl_spline_eval(quintessence.spline_H,1.01 * a,quintessence.acc_H);
+  double Hc102 = gsl_spline_eval(quintessence.spline_H,1.02 * a,quintessence.acc_H);
 
 	ic_fields[0] = chi;
 	ic_fields[1] = phi;
@@ -1699,7 +1705,7 @@ void generateIC_basic(metadata & sim, icsettings & ic, cosmology & cosmo, mg_cos
 		pkspline = gsl_spline_alloc(gsl_interp_cspline, i);
 		gsl_spline_init(pkspline, temp1, temp2, i);
 
-		generateDisplacementField(*scalarFT, sim.gr_flag * Hconf_quintessence * Hconf_quintessence, pkspline, (unsigned int) ic.seed, ic.flags & ICFLAG_KSPHERE);
+		generateDisplacementField(*scalarFT, sim.gr_flag * Hc * Hc, pkspline, (unsigned int) ic.seed, ic.flags & ICFLAG_KSPHERE);
 	}
 	else					// initial displacements and velocities are set by individual transfer functions
 	{
@@ -1723,14 +1729,17 @@ void generateIC_basic(metadata & sim, icsettings & ic, cosmology & cosmo, mg_cos
 		temp1 = (double *) malloc(tk_d1->size * sizeof(double));
 		temp2 = (double *) malloc(tk_d1->size * sizeof(double));
 
-		rescale = 3. * Hconf_quintessence * Hconf_quintessence * Hconf_quintessence * (1. + 0.5 * Hconf_quintessence * Hconf_quintessence * ((1. / gsl_spline_eval(quintessence.spline_H, 0.98 * a, quintessence.acc_H) / gsl_spline_eval(quintessence.spline_H, 0.98 * a, quintessence.acc_H) ) - (8. / gsl_spline_eval(quintessence.spline_H, 0.99 * a,quintessence.acc_H) / gsl_spline_eval(quintessence.spline_H, 0.99 * a,quintessence.acc_H)) + (8. / gsl_spline_eval(quintessence.spline_H, 1.01 * a,quintessence.acc_H) / gsl_spline_eval(quintessence.spline_H, 1.01 * a,quintessence.acc_H)) - (1. / gsl_spline_eval(quintessence.spline_H, 1.02 * a,quintessence.acc_H) / gsl_spline_eval(quintessence.spline_H, 1.02 * a,quintessence.acc_H))) / 0.12);
+		rescale = 3. * Hc * Hc * Hc * (1. + 0.5 * Hc * Hc * ((1. / Hc098 / Hc098) - (8. / Hc099 / Hc099) + (8. / Hc101 / Hc101) - (1. / Hc102 / Hc102)) / 0.12);
+
 		for (i = 0; i < tk_d1->size; i++) // construct phi
-			temp1[i] = (1.5 * (Hconf_quintessence * Hconf_quintessence - gsl_spline_eval(quintessence.spline_H, 1.,quintessence.acc_H) * gsl_spline_eval(quintessence.spline_H, 1.,quintessence.acc_H) * a * a * cosmo.Omega_Lambda) * tk_d1->y[i] + rescale * tk_t1->y[i] / tk_d1->x[i] / tk_d1->x[i]) * M_PI * sqrt(Pk_primordial(tk_d1->x[i] * cosmo.h / sim.boxsize, ic) / tk_d1->x[i]) / tk_d1->x[i];
+    {
+  		temp1[i] = (1.5 * (Hc * Hc - H0 * H0 * a * a * cosmo.Omega_Lambda) * tk_d1->y[i] + rescale * tk_t1->y[i] / tk_d1->x[i] / tk_d1->x[i]) * M_PI * sqrt(Pk_primordial(tk_d1->x[i] * cosmo.h / sim.boxsize, ic) / tk_d1->x[i]) / tk_d1->x[i]; // We assume the MG part is negligible at initial redshift
+      }
 
 		if (sim.gr_flag == 0)
 		{
 			for (i = 0; i < tk_t1->size; i++) // construct gauge correction for N-body gauge (3 Hconf theta_tot / k^2)
-				temp2[i] = -3. * Hconf_quintessence  * M_PI * tk_t1->y[i] * sqrt(Pk_primordial(tk_d1->x[i] * cosmo.h / sim.boxsize, ic) / tk_d1->x[i]) / tk_d1->x[i] / tk_d1->x[i] / tk_d1->x[i];
+				temp2[i] = -3. * Hc  * M_PI * tk_t1->y[i] * sqrt(Pk_primordial(tk_d1->x[i] * cosmo.h / sim.boxsize, ic) / tk_d1->x[i]) / tk_d1->x[i] / tk_d1->x[i] / tk_d1->x[i];
 
 			nbspline = gsl_spline_alloc(gsl_interp_cspline, tk_t1->size);
 			gsl_spline_init(nbspline, tk_t1->x, temp2, tk_t1->size);
@@ -1773,10 +1782,15 @@ void generateIC_basic(metadata & sim, icsettings & ic, cosmology & cosmo, mg_cos
  for (i = 0; i < npts; i++)
  {
    k_mg[i] = tk_d_mg -> x[i];
-   delta_phi = tk_d_mg->y[i] * (mg_field_prime/a) * (H0_hiclass/H0_gev);
+   // delta_phi = tk_d_mg->y[i] * (mg_field_prime/a) * (H0_hiclass/H0_gev);
+   // Test:
+   delta_phi = tk_d_mg->y[i] * (H0_hiclass/H0_gev);
+
    // delta_phi = tk_d_mg->y[i] * (mg_field_prime/a) * (H0_hiclass/H0_gev) ; // NOTE: delta phi [gev] [1] = phi'[gev][1/T]/a * V_X (gev)[T] to have V_X(gev)[T] = V_X[hiclass][T] * H_0 [hiclass]/H0[gev] also phi'[gev][1/T] is already in gev unit. We could equivalently use everything in hiclass units and obtain delta phi [dimensionless] which can be used in gevolution as well
    // To sum: delta phi [gev] [1] = phi'[gev][1/T]/a *  V_X[hiclass][T] * H_0 [hiclass]/H0[gev]
-   delta_phi_prime = (mg_field_prime/a) * tk_t_mg->y[i] +  delta_phi * (mg_field_prime_prime/mg_field_prime - Hconf_quintessence); //delta phi'[gev] [1/T] = phi'[gev][1/T]/a * V_X'[1] + delta phi_gev[1] * (phi''[gev][1/T^2]/phi'[gev][1/T] - H_gev[1/T])
+   delta_phi_prime = (mg_field_prime/a) * tk_t_mg->y[i] +  delta_phi * (mg_field_prime_prime/mg_field_prime - Hc); //delta phi'[gev] [1/T] = phi'[gev][1/T]/a * V_X'[1] + delta phi_gev[1] * (phi''[gev][1/T^2]/phi'[gev][1/T] - H_gev[1/T])
+   // Test:
+    delta_phi_prime = tk_t_mg->y[i] ; //delta phi'[gev]
    scalar_field[i] =  - M_PI * delta_phi * sqrt(Pk_primordial(tk_d_mg->x[i] * cosmo.h / sim.boxsize, ic)/ tk_d_mg->x[i])  / tk_d_mg->x[i];
    scalar_field_prime[i] = - M_PI * delta_phi_prime * sqrt( Pk_primordial(tk_t_mg->x[i] * cosmo.h / sim.boxsize, ic)/ tk_t_mg->x[i])/ tk_t_mg->x[i];
  }
@@ -2258,7 +2272,7 @@ void generateIC_basic(metadata & sim, icsettings & ic, cosmology & cosmo, mg_cos
 		if (kFT.coord(0) == 0 && kFT.coord(1) == 0 && kFT.coord(2) == 0)
 			(*scalarFT)(kFT) = Cplx(0.,0.);
 
-		solveModifiedPoissonFT(*scalarFT, *scalarFT, fourpiG / a, 3. * sim.gr_flag * (Hconf_quintessence * Hconf_quintessence + fourpiG * cosmo.Omega_m / a));
+		solveModifiedPoissonFT(*scalarFT, *scalarFT, fourpiG / a, 3. * sim.gr_flag * (Hc * Hc + fourpiG * cosmo.Omega_m / a));
 	}
 
 	plan_phi->execute(FFT_BACKWARD);
@@ -2266,10 +2280,10 @@ void generateIC_basic(metadata & sim, icsettings & ic, cosmology & cosmo, mg_cos
 
 	if (ic.pkfile[0] != '\0')	// if power spectrum is used instead of transfer functions, set velocities using linear approximation
 	{
-		rescale = a / Hconf_quintessence / (1.5 * gsl_spline_eval(quintessence.spline_Omega_m, a,quintessence.acc_Omega_m) + 2. * gsl_spline_eval(quintessence.spline_Omega_rad, a,quintessence.acc_Omega_rad));
-		maxvel[0] = pcls_cdm->updateVel(initialize_q_ic_basic, rescale, &phi, 1) / a;
-		if (sim.baryon_flag)
-			maxvel[1] = pcls_b->updateVel(initialize_q_ic_basic, rescale, &phi, 1) / a;
+    rescale = a / Hc / (1.5 * Omega_m(a, cosmo) + 2. * Omega_rad(a, cosmo));
+    maxvel[0] = pcls_cdm->updateVel(initialize_q_ic_basic, rescale, &phi, 1) / a;
+    if (sim.baryon_flag)
+      maxvel[1] = pcls_b->updateVel(initialize_q_ic_basic, rescale, &phi, 1) / a;
 	}
 
 	for (p = 0; p < cosmo.num_ncdm; p++)
@@ -2282,13 +2296,13 @@ void generateIC_basic(metadata & sim, icsettings & ic, cosmology & cosmo, mg_cos
 
 		if (ic.pkfile[0] != '\0') // if power spectrum is used instead of transfer functions, set bulk velocities using linear approximation
 		{
-			rescale = a / Hconf_quintessence / (1.5 * gsl_spline_eval(quintessence.spline_Omega_m, 0.99 * a,quintessence.acc_Omega_m) + gsl_spline_eval(quintessence.spline_Omega_rad, a,quintessence.acc_Omega_rad));
+      rescale = a / Hc / (1.5 * Omega_m(a, cosmo) + Omega_rad(a, cosmo));
 			pcls_ncdm[p].updateVel(initialize_q_ic_basic, rescale, &phi, 1);
 		}
 
 		if (cosmo.m_ncdm[p] > 0.) // add velocity dispersion for non-CDM species
 		{
-			rescale = pow(cosmo.Omega_g * cosmo.h * cosmo.h / C_PLANCK_LAW, 0.25) * cosmo.T_ncdm[p] * C_BOLTZMANN_CST / cosmo.m_ncdm[p];
+      rescale = pow(cosmo.Omega_g * cosmo.h * cosmo.h / C_PLANCK_LAW, 0.25) * cosmo.T_ncdm[p] * C_BOLTZMANN_CST / cosmo.m_ncdm[p];
 			mean_q = applyMomentumDistribution(pcls_ncdm+p, (unsigned int) (ic.seed + p), rescale);
 			parallel.sum(mean_q);
 			COUT << " species " << p+1 << " Fermi-Dirac distribution had mean q/m = " << mean_q / sim.numpcl[1+sim.baryon_flag+p] << endl;

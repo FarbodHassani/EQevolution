@@ -456,14 +456,26 @@ int main(int argc, char **argv)
 		generateIC_basic(sim, ic, cosmo, quintessence, fourpiG, &pcls_cdm, &pcls_b, pcls_ncdm, maxvel, &pi, &V_pi, &phi, &chi, &Bi, &source, &Sij, &scalarFT_pi, &scalarFT_V_pi, &scalarFT, &BiFT, &SijFT, &plan_pi, &plan_V_pi, &plan_phi, &plan_chi, &plan_Bi, &plan_source, &plan_Sij, params, numparam); // generates ICs on the fly
 
   else if (ic.generator == ICGEN_READ_FROM_DISK)
+  {
 		readIC(sim, ic, cosmo, quintessence, fourpiG, a, tau, dtau, dtau_old, &pcls_cdm, &pcls_b, pcls_ncdm, maxvel, &phi, &chi, &Bi, &source, &Sij, &scalarFT, &BiFT, &SijFT, &plan_phi, &plan_chi, &plan_Bi, &plan_source, &plan_Sij, cycle, snapcount, pkcount, restartcount, IDbacklog);
+    COUT << " Warning: The chosen IC generator is not tested well in EQ-evolution!" << endl;
+		parallel.abortForce();
+  }
 #ifdef ICGEN_PREVOLUTION
 	else if (ic.generator == ICGEN_PREVOLUTION)
+  {
 		generateIC_prevolution(sim, ic, cosmo, fourpiG, a, tau, dtau, dtau_old, &pcls_cdm, &pcls_b, pcls_ncdm, maxvel, &phi, &chi, &Bi, &source, &Sij, &scalarFT, &BiFT, &SijFT, &plan_phi, &plan_chi, &plan_Bi, &plan_source, &plan_Sij, params, numparam);
+    COUT << " Warning: The chosen IC generator is not tested well in EQ-evolution!" << endl;
+    parallel.abortForce();
+  }
 #endif
 #ifdef ICGEN_FALCONIC
 	else if (ic.generator == ICGEN_FALCONIC)
+  {
 		maxvel[0] = generateIC_FalconIC(sim, ic, cosmo, fourpiG, dtau, &pcls_cdm, pcls_ncdm, maxvel+1, &phi, &source, &chi, &Bi, &source, &Sij, &scalarFT, &BiFT, &SijFT, &plan_phi, &plan_source, &plan_chi, &plan_Bi, &plan_source, &plan_Sij);
+    COUT << " Warning: The chosen IC generator is not tested well in EQ-evolution!" << endl;
+		parallel.abortForce();
+  }
 #endif
 	else
 	{
@@ -533,19 +545,30 @@ int main(int argc, char **argv)
   phi_bg = gsl_spline_eval(quintessence.spline_mg_field, a, quintessence.acc_mg_field);
   phi_p_bg = gsl_spline_eval(quintessence.spline_mg_field_p, a, quintessence.acc_mg_field_p);
   phi_pp_bg = gsl_spline_eval(quintessence.spline_mg_field_pp, a, quintessence.acc_mg_field_pp);
-//   writeSpectra(sim, cosmo, quintessence, fourpiG, a, pkcount,
-// #ifdef HAVE_CLASS
-//     class_background, class_perturbs, ic,
-// #endif
-//     &pcls_cdm, &pcls_b, pcls_ncdm, &phi, &pi, &V_pi, &chi, &Bi, &source, &Sij, &scalarFT, &scalarFT_pi, &scalarFT_V_pi,  &BiFT, &SijFT, &plan_phi, &plan_pi, &plan_V_pi, &plan_chi, &plan_Bi, &plan_source, &plan_Sij
-// #ifdef CHECK_B
-//     , &Bi_check, &BiFT_check, &plan_Bi_check
-// #endif
-// #ifdef VELOCITY
-//     , &vi, &viFT, &plan_vi
-// #endif
-//   );
+ // Test Hack
+  writeSpectra(sim, cosmo, quintessence, fourpiG, a, pkcount,
+#ifdef HAVE_CLASS
+    class_background, class_perturbs, ic,
+#endif
+    &pcls_cdm, &pcls_b, pcls_ncdm, &phi, &pi, &V_pi, &chi, &Bi, &source, &Sij, &scalarFT, &scalarFT_pi, &scalarFT_V_pi,  &BiFT, &SijFT, &plan_phi, &plan_pi, &plan_V_pi, &plan_chi, &plan_Bi, &plan_source, &plan_Sij
+#ifdef CHECK_B
+    , &Bi_check, &BiFT_check, &plan_Bi_check
+#endif
+#ifdef VELOCITY
+    , &vi, &viFT, &plan_vi
+#endif
+  );
+  // Test Hack
 
+  writeSnapshots(sim, cosmo, quintessence, fourpiG, a, dtau_old, done_hij, snapcount, h5filename + sim.basename_snapshot, &pcls_cdm, &pcls_b, pcls_ncdm, &phi, &pi, &V_pi, &chi, &Bi, &source, &Sij, &scalarFT, &BiFT, &SijFT, &plan_phi, &plan_chi, &plan_Bi, &plan_source, &plan_Sij
+  #ifdef CHECK_B
+    , &Bi_check, &BiFT_check, &plan_Bi_check
+  #endif
+  #ifdef VELOCITY
+    , &vi
+  #endif
+  );
+  // Test Hack
 	while (true)    // main loop
 	{
     for (x.first(); x.test(); x.next())

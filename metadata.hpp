@@ -299,6 +299,9 @@ struct mg_cosmology
 {
   // Non-linearities
   int NL_quintessence;
+  int Omega_smg;
+  int gravity_model;
+  double Omega_Lambda;
 	// Action parameters
 	double mg_alpha;
   double mg_Lambda;

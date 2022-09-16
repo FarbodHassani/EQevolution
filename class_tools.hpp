@@ -153,16 +153,16 @@ void initializeCLASSstructures(metadata & sim, icsettings & ic, cosmology & cosm
 	sprintf(class_filecontent.value[i++], "%e", cosmo.Omega_ur);
 
 	sprintf(class_filecontent.name[i], "Omega_fld");
-	sprintf(class_filecontent.value[i++], "%e", cosmo.Omega_fld);
+	sprintf(class_filecontent.value[i++], "%e", 0.);
 
 	sprintf(class_filecontent.name[i], "w0_fld");
-	sprintf(class_filecontent.value[i++], "%g", cosmo.w0_fld);
+	sprintf(class_filecontent.value[i++], "%g", 0.);
 
 	sprintf(class_filecontent.name[i], "wa_fld");
-	sprintf(class_filecontent.value[i++], "%g", cosmo.wa_fld);
+	sprintf(class_filecontent.value[i++], "%g", 0.);
 
 	sprintf(class_filecontent.name[i], "cs2_fld");
-	sprintf(class_filecontent.value[i++], "%g", cosmo.cs2_fld);
+	sprintf(class_filecontent.value[i++], "%g", 0.);
 
 	sprintf(class_filecontent.name[i], "N_ncdm");
 	sprintf(class_filecontent.value[i++], "%d", cosmo.num_ncdm);
@@ -424,15 +424,10 @@ void loadTransferFunctions(background & class_background, perturbs & class_pertu
 	char kname[8];
 	char * ptr;
   double a = 1./(1.+z);
-  double Hconf_class = gsl_spline_eval(quintessence.spline_H,a,quintessence.acc_H) * (100*h/(C_SPEED_OF_LIGHT*100.))/gsl_spline_eval(quintessence.spline_H,1.0,quintessence.acc_H); // Note that 100h/c[km/s] give H[1/Mpc] which is what we want for the gauge transformation.
+  double Hconf_class = gsl_spline_eval(quintessence.spline_H,a,quintessence.acc_H) * (100*h/(C_SPEED_OF_LIGHT*100.))/gsl_spline_eval(quintessence.spline_H,1.0,quintessence.acc_H); // Note that 100h/c[km/s] give Hconf[1/Mpc] which is what we want for the gauge transformation.
   double Omega_m = gsl_spline_eval(quintessence.spline_Omega_m,a,quintessence.acc_Omega_m);
   double Omega_rad = gsl_spline_eval(quintessence.spline_Omega_rad,a,quintessence.acc_Omega_rad);
   double Omega_mg = gsl_spline_eval(quintessence.spline_Omega_mg,a,quintessence.acc_Omega_mg);
-  // if (Omega_fld =! 0)
-  // {
-  //   double Omega_fld = gsl_spline_eval(quintessence.spline_Omega_fld,a,quintessence.acc_Omega_fld);
-  //   double w_fld = gsl_spline_eval(quintessence.spline_w_fld,a,quintessence.acc_w_fld);
-  // }
   double w_mg = gsl_spline_eval(quintessence.spline_w_mg,a,quintessence.acc_w_mg);
 	perturb_output_titles(&class_background, &class_perturbs, class_format, coltitles);
 
@@ -488,8 +483,14 @@ void loadTransferFunctions(background & class_background, perturbs & class_pertu
     alpha_prime = data[i*cols + psicol] + data[i*cols + phicol] - data[i*cols + etacol];
     if (strncmp(qname,"vx",strlen("vx")) == 0)
      {
-      tk_d[i] = data[i*cols + dcol] + alpha; // gauge correction NOTE that v_x is in [1/Mpc]
-      tk_t[i] = data[i*cols + tcol] + alpha_prime;// gauge correction
+      // tk_d[i] = data[i*cols + dcol] - alpha; // gauge correction NOTE that v_x is in [1/Mpc]
+      // TEST:
+      tk_d[i] = data[i*cols + dcol]; // gauge correction NOTE that v_x is in [1/Mpc]
+
+      // tk_t[i] = data[i*cols + tcol] - alpha_prime;// gauge correction
+      // There is a sign difference between EQ-evolution notation and hiclass.
+      // TEST:
+      tk_t[i] = data[i*cols + tcol];// gauge correction
      }
 
     else if (strncmp(qname,"cdm",strlen("cdm")) == 0) // tk_t cdm is 0 in sync gauge!
@@ -611,7 +612,7 @@ void loadBGFunctions(background & class_background, mg_cosmology & quintessence,
     else if (strncmp(qname,"Omega_mg",strlen("Omega_mg")) == 0)
     {
       if (strncmp(ptr, "(.)rho_smg", strlen("(.)rho_smg")) == 0) bgcol = cols;
-      else if (strncmp(ptr, "(.)rho_tot", strlen("(.)rho_tot")) == 0) bgcol2 = cols;
+      else if (strncmp(ptr, "(.)rho_crit", strlen("(.)rho_crit")) == 0) bgcol2 = cols;
       else if (strncmp(ptr, zname, strlen(zname)) == 0) zcol = cols;
     }
     // else if (strncmp(qname,"Omega_fld",strlen("Omega_fld")) == 0)
@@ -624,14 +625,14 @@ void loadBGFunctions(background & class_background, mg_cosmology & quintessence,
     {
       if (strncmp(ptr, "(.)rho_cdm", strlen("(.)rho_cdm")) == 0) bgcol = cols;
       else if (strncmp(ptr, "(.)rho_b", strlen("(.)rho_b")) == 0) bgcol2 = cols;
-      else if (strncmp(ptr, "(.)rho_tot", strlen("(.)rho_tot")) == 0) bgcol3 = cols;
+      else if (strncmp(ptr, "(.)rho_crit", strlen("(.)rho_crit")) == 0) bgcol3 = cols;
       else if (strncmp(ptr, zname, strlen(zname)) == 0) zcol = cols;
     }
     else if (strncmp(qname,"Omega_rad",strlen("Omega_rad")) == 0)
     {
       if (strncmp(ptr, "(.)rho_g", strlen("(.)rho_g")) == 0) bgcol = cols;
-      else if (strncmp(ptr, "(.)rho_ur", strlen("(.)rho_ur")) == 0) bgcol2 = cols;
-      else if (strncmp(ptr, "(.)rho_tot", strlen("(.)rho_tot")) == 0) bgcol3 = cols;
+      // else if (strncmp(ptr, "(.)rho_ur", strlen("(.)rho_ur")) == 0) bgcol2 = cols;
+      else if (strncmp(ptr, "(.)rho_crit", strlen("(.)rho_crit")) == 0) bgcol2 = cols;
       else if (strncmp(ptr, zname, strlen(zname)) == 0) zcol = cols;
     }
     else if (strncmp(qname,"conf. time [Mpc]",strlen("conf. time [Mpc]")) == 0 || strncmp(qname,"scale factor",strlen("scale factor")) == 0)
@@ -663,7 +664,8 @@ void loadBGFunctions(background & class_background, mg_cosmology & quintessence,
     parallel.abortForce();
   }
   background_output_data(&class_background, cols, data);
-  for(bg_size=0;data[bg_size*cols + zcol]>z_in * 5.1;bg_size++){};
+  // I commented the line below! CHECK!
+  // for(bg_size=0;data[bg_size*cols + zcol]>z_in * 5.1;bg_size++){};
 
 	a = (double *) malloc(sizeof(double) * (class_background.bt_size-bg_size+num_points));
 	bg = (double *) malloc(sizeof(double) * (class_background.bt_size-bg_size+num_points));
@@ -673,7 +675,7 @@ void loadBGFunctions(background & class_background, mg_cosmology & quintessence,
     parallel.abortForce();
   }
 
-	background_output_data(&class_background, cols, data);
+	// background_output_data(&class_background, cols, data);
 
 	for (int i = bg_size; i < class_background.bt_size; i++)
 	{
@@ -702,7 +704,7 @@ void loadBGFunctions(background & class_background, mg_cosmology & quintessence,
     }
     else if (strncmp(qname,"Omega_rad",strlen("Omega_rad")) == 0)
     {
-      bg[i-bg_size] = (data[i*cols + bgcol] + data[i*cols + bgcol2])/data[i*cols + bgcol3];
+      bg[i-bg_size] = (data[i*cols + bgcol])/data[i*cols + bgcol2];// Omega_rad = rho_g/rho_crit
     }
    else
 		{

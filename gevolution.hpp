@@ -659,7 +659,7 @@ void update_pi( double dtau, Field<FieldType> & pi, Field<FieldType> & V_pi)
 template <class FieldType>
 void update_V_pi(Field<FieldType> & phi, Field<FieldType> & phi_old, Field<FieldType> & chi, Field<FieldType> & chi_old, Field<FieldType> & pi, Field<FieldType> & V_pi, Field<FieldType> & TiimT00, Field<FieldType> & source, const double varphi_bg, const double varphi_prime_bg, const double alpha, const double Lambda, const double sigma, const double Hcon, const double H_prime, const double fourpiG, const double a, const double dx, const double dtau, int non_linearity)
   {
-    double phi_prime, chi_prime;
+    double phi_prime, chi_prime, pi_prime_prime;
     double f_varphi = alpha * varphi_bg * varphi_bg;
     double f_prime_varphi = 2. * alpha * varphi_bg;
     double f_ddprime_varphi = 2. * alpha;
@@ -704,15 +704,18 @@ void update_V_pi(Field<FieldType> & phi, Field<FieldType> & phi_old, Field<Field
             Gradpi_Gradpi+=.25 * (pi(x + 2)  - pi(x - 2)) * (pi(x + 2) - pi(x - 2));
             Gradpi_Gradpi/= dx * dx;
           }
-      V_pi(x) = (1. + coeff_C * dtau/2.) * V_pi(x)
-      + (dtau/2.) * (coeff_D * pi(x)
-              + coeff_E * Laplacian_pi
-              + coeff_F * Gradpi_Gradpi
-              + varphi_prime_bg *  (4. * phi_prime - chi_prime)
-              + coeff_G * (phi(x) - chi(x))
-              + coeff_H * Laplacian_phi
-      + a * a * f_prime_varphi/gamma/3. * TiimT00(x));
-      V_pi(x) /= (1. - coeff_C * dtau/2.);
+        // TEST:
+        pi_prime_prime =  + (Hcon * V_pi(x) + Hcon * Hcon * pi(x)) + 1 * Laplacian_pi + TiimT00(x); //+ 1 * Laplacian_pi ); //+ coeff_D * pi(x));
+        V_pi(x) = V_pi(x) + pi_prime_prime * dtau;
+      // V_pi(x) = (1. + coeff_C * dtau/2.) * V_pi(x)
+      // + (dtau/2.) * (coeff_D * pi(x)
+      //         + coeff_E * Laplacian_pi
+      //         + coeff_F * Gradpi_Gradpi
+      //         + varphi_prime_bg *  (4. * phi_prime - chi_prime)
+      //         + coeff_G * (phi(x) - chi(x))
+      //         + coeff_H * Laplacian_phi
+      // + a * a * f_prime_varphi/gamma/3. * TiimT00(x));
+      // V_pi(x) /= (1. - coeff_C * dtau/2.);
   }
 }
 
