@@ -66,7 +66,7 @@
 // Quintessence
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_spline.h>
-#include "background_import.hpp"
+// #include "background_import.hpp"
 
 using namespace std;
 using namespace LATfield2;
@@ -196,12 +196,13 @@ int main(int argc, char **argv)
 	usedparams = parseMetadata(params, numparam, sim, cosmo, quintessence, ic);
 
 	COUT << " parsing of settings file completed. " << numparam << " parameters found, " << usedparams << " were used." << endl;
+  #ifdef FULL_EQ
   if (quintessence.NL_quintessence == 1)
   {
     COUT<<"The quintessence is solved with non-linear corrections!"<<endl;
   }
   else COUT<<"The linear quintessence equations are being solved!"<<endl;
-
+#endif
 
 	sprintf(filename, "%s%s_settings_used.ini", sim.output_path, sim.basename_generic);
 	saveParameterFile(filename, params, numparam);
@@ -238,6 +239,7 @@ int main(int argc, char **argv)
 	Field<Real> * update_ncdm_fields[3];
 	double f_params[5];
 	set<long> IDbacklog[MAX_PCL_SPECIES];
+  #ifdef FULL_EQ
 	// Quintessence
   Field<Real> pi;   // pi =: delta varphi
   Field<Real> V_pi; // V_pi =: conformal time derivative of delta varphi
@@ -274,6 +276,8 @@ int main(int argc, char **argv)
 	//PlanFFT<Cplx> plan_chi_prime(&chi_prime, &scalarFT_chi_prime);
   scalarFT_TiimT00.initialize(latFT,1);
   PlanFFT<Cplx> plan_TiimT00(&TiimT00, &scalarFT_TiimT00);
+  #endif
+
 	Field<Real> phi;
 	Field<Real> source;
 	Field<Real> chi;
@@ -453,12 +457,18 @@ int main(int argc, char **argv)
 
 
 	if (ic.generator == ICGEN_BASIC)
-		generateIC_basic(sim, ic, cosmo, quintessence, fourpiG, &pcls_cdm, &pcls_b, pcls_ncdm, maxvel, &pi, &V_pi, &phi, &chi, &Bi, &source, &Sij, &scalarFT_pi, &scalarFT_V_pi, &scalarFT, &BiFT, &SijFT, &plan_pi, &plan_V_pi, &plan_phi, &plan_chi, &plan_Bi, &plan_source, &plan_Sij, params, numparam); // generates ICs on the fly
+		generateIC_basic(sim, ic, cosmo,
+#ifdef FULL_EQ
+    quintessence, &pi, &V_pi, &scalarFT_pi, &scalarFT_V_pi, &plan_pi, &plan_V_pi,
+#elif PARAMETRIZED_EQ
+quintessence,
+#endif
+    fourpiG, &pcls_cdm, &pcls_b, pcls_ncdm, maxvel, &phi, &chi, &Bi, &source, &Sij, &scalarFT, &BiFT, &SijFT,  &plan_phi, &plan_chi, &plan_Bi, &plan_source, &plan_Sij, params, numparam); // generates ICs on the fly
 
   else if (ic.generator == ICGEN_READ_FROM_DISK)
   {
-		readIC(sim, ic, cosmo, quintessence, fourpiG, a, tau, dtau, dtau_old, &pcls_cdm, &pcls_b, pcls_ncdm, maxvel, &phi, &chi, &Bi, &source, &Sij, &scalarFT, &BiFT, &SijFT, &plan_phi, &plan_chi, &plan_Bi, &plan_source, &plan_Sij, cycle, snapcount, pkcount, restartcount, IDbacklog);
-    COUT << " Warning: The chosen IC generator is not tested well in EQ-evolution!" << endl;
+		// readIC(sim, ic, cosmo, quintessence, fourpiG, a, tau, dtau, dtau_old, &pcls_cdm, &pcls_b, pcls_ncdm, maxvel, &phi, &chi, &Bi, &source, &Sij, &scalarFT, &BiFT, &SijFT, &plan_phi, &plan_chi, &plan_Bi, &plan_source, &plan_Sij, cycle, snapcount, pkcount, restartcount, IDbacklog);
+    COUT << " ERROR: The chosen IC generator is not tested well in EQ-evolution!" << endl;
 		parallel.abortForce();
   }
 #ifdef ICGEN_PREVOLUTION
@@ -546,11 +556,17 @@ int main(int argc, char **argv)
   phi_p_bg = gsl_spline_eval(quintessence.spline_mg_field_p, a, quintessence.acc_mg_field_p);
   phi_pp_bg = gsl_spline_eval(quintessence.spline_mg_field_pp, a, quintessence.acc_mg_field_pp);
  // Test Hack
-  writeSpectra(sim, cosmo, quintessence, fourpiG, a, pkcount,
+  writeSpectra(sim, cosmo,
+#ifdef FULL_EQ
+        quintessence, &pi, &V_pi, &scalarFT_pi, &scalarFT_V_pi, &plan_pi, &plan_V_pi,
+#elif PARAMETRIZED_EQ
+        quintessence,
+#endif
+    fourpiG, a, pkcount,
 #ifdef HAVE_CLASS
     class_background, class_perturbs, ic,
 #endif
-    &pcls_cdm, &pcls_b, pcls_ncdm, &phi, &pi, &V_pi, &chi, &Bi, &source, &Sij, &scalarFT, &scalarFT_pi, &scalarFT_V_pi,  &BiFT, &SijFT, &plan_phi, &plan_pi, &plan_V_pi, &plan_chi, &plan_Bi, &plan_source, &plan_Sij
+    &pcls_cdm, &pcls_b, pcls_ncdm, &phi, &chi, &Bi, &source, &Sij, &scalarFT, &BiFT, &SijFT, &plan_phi, &plan_chi, &plan_Bi, &plan_source, &plan_Sij
 #ifdef CHECK_B
     , &Bi_check, &BiFT_check, &plan_Bi_check
 #endif
@@ -560,9 +576,15 @@ int main(int argc, char **argv)
   );
   // Test Hack
 
-  writeSnapshots(sim, cosmo, quintessence, fourpiG, a, dtau_old, done_hij, snapcount, h5filename + sim.basename_snapshot, &pcls_cdm, &pcls_b, pcls_ncdm, &phi, &pi, &V_pi, &chi, &Bi, &source, &Sij, &scalarFT, &BiFT, &SijFT, &plan_phi, &plan_chi, &plan_Bi, &plan_source, &plan_Sij
+  writeSnapshots(sim, cosmo,
+  #ifdef FULL_EQ
+   quintessence, &pi, &V_pi,
+  #elif PARAMETRIZED_EQ
+  quintessence,
+  #endif
+  fourpiG, a, dtau_old, done_hij, snapcount, h5filename + sim.basename_snapshot, &pcls_cdm, &pcls_b, pcls_ncdm, &phi, &chi, &Bi, &source, &Sij, &scalarFT, &BiFT, &SijFT, &plan_phi, &plan_chi, &plan_Bi, &plan_source, &plan_Sij
   #ifdef CHECK_B
-    , &Bi_check, &BiFT_check, &plan_Bi_check
+  , &Bi_check, &BiFT_check, &plan_Bi_check
   #endif
   #ifdef VELOCITY
     , &vi
@@ -571,11 +593,13 @@ int main(int argc, char **argv)
   // Test Hack
 	while (true)    // main loop
 	{
+  #ifdef FULL_EQ
     for (x.first(); x.test(); x.next())
     {
 			phi_old(x)=phi(x);
 			chi_old(x)=chi(x);
      }
+  #endif
 
 #ifdef BENCHMARK
 		cycle_start_time = MPI_Wtime();
@@ -713,7 +737,11 @@ int main(int argc, char **argv)
 			fft_count++;
 #endif
 
-			solveModifiedPoissonFT(scalarFT, scalarFT, fourpiG / a);  // Newton: phi update (k-space)
+#ifdef PARAMETRIZED_EQ
+  solveModifiedPoissonFT(scalarFT, scalarFT, fourpiG / a);  // Newton: phi update (k-space) extended quintessence
+#else
+  solveModifiedPoissonFT(scalarFT, scalarFT, fourpiG / a);  // Newton: phi update (k-space)
+#endif
 
 #ifdef BENCHMARK
 			ref2_time= MPI_Wtime();
@@ -728,6 +756,7 @@ int main(int argc, char **argv)
 		phi.updateHalo();  // communicate halo values
 
 		// record some background data
+#if defined(FULL_EQ)
 		if (kFT.setCoord(0, 0, 0))
 		{
 			outfile = fopen(filename, "a");
@@ -762,10 +791,12 @@ int main(int argc, char **argv)
       phi_p_bg = phi_p_bg + dtau * phi_pp_bg/2.;
 		}
 		// done recording background data
-		prepareFTsource<Real>(phi, Sij, Sij, 2. * fourpiG * dx * dx / a);  // prepare nonlinear source for additional equations
+    prepareFTsource<Real>(phi, Sij, Sij, 2. * fourpiG * dx * dx / a);  // prepare nonlinear source for additional equations
     // prepareFTsource_Tii<Real>(phi, source, Sij, Sij, TiimT00, 2. * fourpiG * dx * dx / a);  // prepare nonlinear source for additional equations
-    // prepareFTsource_Quintessence(phi, Sij, Sij, chi, pi, V_pi, mg_field, mg_field_prime, alpha, Lambda, sigma, Hconf_quintessence, fourpiG, a, dx, dtau_old);
-
+      // prepareFTsource_Quintessence(phi, Sij, Sij, chi, pi, V_pi, mg_field, mg_field_prime, alpha, Lambda, sigma, Hconf_quintessence, fourpiG, a, dx, dtau_old);
+#else
+		prepareFTsource<Real>(phi, Sij, Sij, 2. * fourpiG * dx * dx / a);  // prepare nonlinear source
+#endif
 
 #ifdef BENCHMARK
 		ref2_time= MPI_Wtime();
@@ -847,7 +878,13 @@ int main(int argc, char **argv)
 		{
 			COUT << COLORTEXT_CYAN << " writing snapshot" << COLORTEXT_RESET << " at z = " << ((1./a) - 1.) <<  " (cycle " << cycle << "), tau/boxsize = " << tau << endl;
 
-			writeSnapshots(sim, cosmo, quintessence, fourpiG, a, dtau_old, done_hij, snapcount, h5filename + sim.basename_snapshot, &pcls_cdm, &pcls_b, pcls_ncdm, &phi, &pi, &V_pi, &chi, &Bi, &source, &Sij, &scalarFT, &BiFT, &SijFT, &plan_phi, &plan_chi, &plan_Bi, &plan_source, &plan_Sij
+		writeSnapshots(sim, cosmo,
+#ifdef FULL_EQ
+      quintessence, &pi, &V_pi,
+#elif PARAMETRIZED_EQ
+      quintessence,
+#endif
+        fourpiG, a, dtau_old, done_hij, snapcount, h5filename + sim.basename_snapshot, &pcls_cdm, &pcls_b, pcls_ncdm, &phi, &chi, &Bi, &source, &Sij, &scalarFT, &BiFT, &SijFT, &plan_phi, &plan_chi, &plan_Bi, &plan_source, &plan_Sij
 #ifdef CHECK_B
 				, &Bi_check, &BiFT_check, &plan_Bi_check
 #endif
@@ -869,11 +906,17 @@ int main(int argc, char **argv)
 		{
 			COUT << COLORTEXT_CYAN << " writing power spectra" << COLORTEXT_RESET << " at z = " << ((1./a) - 1.) <<  " (cycle " << cycle << "), tau/boxsize = " << tau << endl;
 
-			writeSpectra(sim, cosmo, quintessence, fourpiG, a, pkcount,
+			writeSpectra(sim, cosmo,
+#ifdef FULL_EQ
+                quintessence, &pi, &V_pi, &scalarFT_pi, &scalarFT_V_pi, &plan_pi, &plan_V_pi,
+#elif PARAMETRIZED_EQ
+                quintessence,
+#endif
+      fourpiG, a, pkcount,
 #ifdef HAVE_CLASS
 				class_background, class_perturbs, ic,
 #endif
-				&pcls_cdm, &pcls_b, pcls_ncdm, &phi, &pi, &V_pi, &chi, &Bi, &source, &Sij, &scalarFT, &scalarFT_pi, &scalarFT_V_pi,  &BiFT, &SijFT, &plan_phi, &plan_pi, &plan_V_pi, &plan_chi, &plan_Bi, &plan_source, &plan_Sij
+				&pcls_cdm, &pcls_b, pcls_ncdm, &phi, &chi, &Bi, &source, &Sij, &scalarFT, &BiFT, &SijFT, &plan_phi, &plan_chi, &plan_Bi, &plan_source, &plan_Sij
 #ifdef CHECK_B
 				, &Bi_check, &BiFT_check, &plan_Bi_check
 #endif
@@ -896,11 +939,17 @@ int main(int argc, char **argv)
 
 		if (pkcount < sim.num_pk && 1. / tmp < sim.z_pk[pkcount] + 1.)
 		{
-			writeSpectra(sim, cosmo, quintessence, fourpiG, a, pkcount,
+			writeSpectra(sim, cosmo,
+#ifdef FULL_EQ
+        quintessence, &pi, &V_pi, &scalarFT_pi, &scalarFT_V_pi, &plan_pi, &plan_V_pi,
+#elif PARAMETRIZED_EQ
+        quintessence,
+#endif
+      fourpiG, a, pkcount,
 #ifdef HAVE_CLASS
 				class_background, class_perturbs, ic,
 #endif
-        &pcls_cdm, &pcls_b, pcls_ncdm, &phi, &pi, &V_pi, &chi, &Bi, &source, &Sij, &scalarFT, &scalarFT_pi, &scalarFT_V_pi,  &BiFT, &SijFT, &plan_phi, &plan_pi, &plan_V_pi, &plan_chi, &plan_Bi, &plan_source, &plan_Sij
+        &pcls_cdm, &pcls_b, pcls_ncdm, &phi, &chi, &Bi, &source, &Sij, &scalarFT, &BiFT, &SijFT, &plan_phi, &plan_chi, &plan_Bi, &plan_source, &plan_Sij
 #ifdef CHECK_B
 				, &Bi_check, &BiFT_check, &plan_Bi_check
 #endif
@@ -959,8 +1008,8 @@ int main(int argc, char **argv)
 			COUT << endl;
 		}
 
-
-    //Kessence
+#if defined(FULL_EQ)
+    //EQ
 #ifdef BENCHMARK
     ref_time = MPI_Wtime();
 #endif
@@ -977,7 +1026,7 @@ int main(int argc, char **argv)
       V_pi.updateHalo();
   }
  //Then we start the main loop V_pi is updated to get V_pi(n+1/2) from pi(n) and V_pi(n-1/2)
-  for (i=0;i<sim.nq_numsteps;i++)
+  for (i=0;i<quintessence.nq_numsteps;i++)
   {
       update_V_pi(phi, phi_old, chi, chi_old, pi, V_pi, TiimT00, source,
 			 gsl_spline_eval(quintessence.spline_mg_field,a_quintessence,quintessence.acc_mg_field),
@@ -985,24 +1034,24 @@ int main(int argc, char **argv)
 			 alpha, Lambda, sigma,
 			 gsl_spline_eval(quintessence.spline_H,a_quintessence,quintessence.acc_H),
 			 gsl_spline_eval(quintessence.spline_H_prime,a_quintessence,quintessence.acc_H_prime),
-			 fourpiG, a_quintessence, dx, dtau/ sim.nq_numsteps, quintessence.NL_quintessence);
+			 fourpiG, a_quintessence, dx, dtau/ quintessence.nq_numsteps, quintessence.NL_quintessence);
     V_pi.updateHalo();
 
 		a_quintessence = gsl_spline_eval(quintessence.spline_a ,
-			gsl_spline_eval(quintessence.spline_particleHorizon,a_quintessence, quintessence.acc_particleHorizon) + dtau / sim.nq_numsteps / 2.0,
+			gsl_spline_eval(quintessence.spline_particleHorizon,a_quintessence, quintessence.acc_particleHorizon) + dtau / quintessence.nq_numsteps / 2.0,
 			quintessence.acc_a);
-    // rungekutta4bg(a_quintessence, fourpiG, cosmo,  dtau  / sim.nq_numsteps / 2.0);
+    // rungekutta4bg(a_quintessence, fourpiG, cosmo,  dtau  / quintessence.nq_numsteps / 2.0);
 
-		update_pi(dtau/ sim.nq_numsteps, pi, V_pi);
+		update_pi(dtau/ quintessence.nq_numsteps, pi, V_pi);
     pi.updateHalo();
     //********************************************************************************
     // Now we have pi(n+1) and a_kess(n+1/2) so we update background by halfstep to have a_kess(n+1)
     //********************************************************************************
 
 		a_quintessence = gsl_spline_eval(quintessence.spline_a ,
-			gsl_spline_eval(quintessence.spline_particleHorizon, a_quintessence, quintessence.acc_particleHorizon) + dtau / sim.nq_numsteps / 2.0,
+			gsl_spline_eval(quintessence.spline_particleHorizon, a_quintessence, quintessence.acc_particleHorizon) + dtau / quintessence.nq_numsteps / 2.0,
 			quintessence.acc_a);
-    // rungekutta4bg(a_quintessence, fourpiG, cosmo,  dtau  / sim.nq_numsteps / 2.0 );
+    // rungekutta4bg(a_quintessence, fourpiG, cosmo,  dtau  / quintessence.nq_numsteps / 2.0 );
   }
 
 #ifdef BENCHMARK
@@ -1012,6 +1061,8 @@ int main(int argc, char **argv)
 
 #ifdef BENCHMARK
 		ref2_time = MPI_Wtime();
+#endif
+
 #endif
 		for (i = 0; i < cosmo.num_ncdm; i++) // non-cold DM particle update
 		{

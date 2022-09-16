@@ -202,8 +202,6 @@ struct lightcone_geometry
 struct metadata
 {
 	int numpts;
-  //quintessence
-  int nq_numsteps;
 	int downgrade_factor;
 	long numpcl[MAX_PCL_SPECIES];
 	int tracer_factor[MAX_PCL_SPECIES];
@@ -295,10 +293,15 @@ struct cosmology
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_spline.h>
 
+#if defined(FULL_EQ) || defined(PARAMETRIZED_EQ)
+// Extended quintessence
 struct mg_cosmology
 {
-  // Non-linearities
+  int theory_quintessence; // Full theory implementation=0 or parametrized theory
+  #if defined(FULL_EQ)
+  int nq_numsteps;
   int NL_quintessence;
+  #endif
   int Omega_smg;
   int gravity_model;
   double Omega_Lambda;
@@ -308,38 +311,6 @@ struct mg_cosmology
   double mg_sigma;
   double ic_phi;
   double ic_phi_p;
-
-  // Vector of background values to be filled with mg_import function
-  std::vector<double> a_vec;
-  std::vector<double> H_vec;
-	std::vector<double> H_prime_vec;
-	std::vector<double> w_mg_vec;
-  // std::vector<double> w_fld_vec;
-	std::vector<double> Omega_m_vec;
-  // std::vector<double> Omega_fld_vec;
-	std::vector<double> Omega_rad_vec;
-	std::vector<double> Omega_mg_vec;
-  std::vector<double> mg_field_vec;
-  std::vector<double> mg_field_p_vec;
-  std::vector<double> particleHorizon_vec;
-
-  // Pointers to associated double * arrays to the above vectors (necessary as inputs of GSL interpolation)
-  double * a;
-  double * H;
-	double * H_prime;
-	double * w_mg;
-  double * w_fld;
-	double * Omega_m;
-	double * Omega_rad;
-	double * Omega_mg;
-  // double * Omega_fld;
-  double * mg_field;
-  double * mg_field_p;
-  double * particleHorizon;
-
-  // Value of the size of the vectors
-  int last_int;
-
   // Interpolation structures (allocated in main)
   gsl_interp_accel * acc_H;
   gsl_spline * spline_H;
@@ -347,10 +318,6 @@ struct mg_cosmology
   gsl_spline * spline_H_prime;
 	gsl_interp_accel * acc_w_mg;
   gsl_spline * spline_w_mg;
-  // gsl_interp_accel * acc_w_fld;
-  // gsl_spline * spline_w_fld;
-  // gsl_interp_accel * acc_Omega_fld;
-  // gsl_spline * spline_Omega_fld;
 	gsl_interp_accel * acc_Omega_m;
   gsl_spline * spline_Omega_m;
 	gsl_interp_accel * acc_Omega_rad;
@@ -365,17 +332,15 @@ struct mg_cosmology
   gsl_spline * spline_mg_field_pp;
   gsl_interp_accel * acc_particleHorizon;
   gsl_spline * spline_particleHorizon;
-
 	// "Inverse" interpolation structure to find the scale factor as a function of the particle horizon
 	gsl_interp_accel * acc_a;
   gsl_spline * spline_a;
-
 	// File name (parsed from settings.ini)
 	char mg_bkg_file[40] = "bk.csv";
-
 	// Parameter for mg verbosity
 	int mg_verbose = 0;
 
 };
+#endif
 
 #endif

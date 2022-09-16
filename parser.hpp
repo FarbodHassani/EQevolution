@@ -1586,6 +1586,8 @@ int parseMetadata(parameter * & params, const int numparam, metadata & sim, cosm
       COUT<< "In the current code you cannot use Newtonian version of gevolution. You should use gevolution for this! \033[0m" << endl;
 
 			COUT << " gravity theory set to: " << COLORTEXT_CYAN << "Newtonian" << COLORTEXT_RESET << endl;
+      parallel.abortForce();
+
 			sim.gr_flag = 0;
 			if (ic.pkfile[0] == '\0' && ic.tkfile[0] != '\0'
 #ifdef ICGEN_PREVOLUTION
@@ -1596,6 +1598,11 @@ int parseMetadata(parameter * & params, const int numparam, metadata & sim, cosm
 				COUT << COLORTEXT_YELLOW << " /!\\ warning" << COLORTEXT_RESET << ": gauge transformation to N-body gauge can only be performed for the positions; the transformation for" << endl;
 				COUT << "              the velocities requires time derivatives of transfer functions. Call CLASS directly to avoid this issue." << endl;
 			}
+		}
+    else if (par_string[0]=='P' || par_string[0]=='p')
+    {
+			COUT << " gravity theory set to: " << COLORTEXT_CYAN << "Newtonian Parametrized Gravity (Extended Quintessence)" << COLORTEXT_RESET << endl;
+			sim.gr_flag = 0;
 		}
 		else if (par_string[0] == 'G' || par_string[0] == 'g')
 		{
@@ -1641,12 +1648,59 @@ int parseMetadata(parameter * & params, const int numparam, metadata & sim, cosm
 		quintessence.ic_phi = 1.e-20;
   if (!parseParameter(params, numparam, "quintessence ic_phi_p_ini", quintessence.ic_phi_p))
     quintessence.ic_phi_p =1.6;
-  if (!parseParameter(params, numparam, "quintessence non-linear steps",  sim.nq_numsteps))
-  	sim.nq_numsteps = 1;
+  #ifdef FULL_EQ
+  if (!parseParameter(params, numparam, "quintessence non-linear steps",  quintessence.nq_numsteps))
+  	quintessence.nq_numsteps = 1;
 
   if (!parseParameter(params, numparam, "quintessence non-linear", quintessence.NL_quintessence))
   	quintessence.NL_quintessence = 0; //Default is linear quintessence.
+  #endif
 
+    if (parseParameter(params, numparam, "quintessence theory", par_string))
+    {
+      if (par_string[0] == 'F' || par_string[0] == 'f')
+      {
+        quintessence.theory_quintessence = 0;
+      }
+      else if (par_string[0] == 'P' || par_string[0] == 'p')
+      {
+        quintessence.theory_quintessence = 1;
+      }
+      else
+      {
+        quintessence.theory_quintessence = 0;
+      }
+    }
+
+#ifdef FULL_EQ
+    if (quintessence.theory_quintessence==0)
+    {
+      if(parallel.isRoot())  cout << "\033[1;32m Full theory of Extended quintessence is solved in the code! \033[0m"<< endl;
+
+    }
+  else
+  {
+    if(parallel.isRoot())  cout <<"\033[1;31m ERROR: The full theory is requested to be solved while the code is not compiled with the option! You might need to add DGEVOLUTION  += -DFULL_EQ \033[0m" << endl;
+    parallel.abortForce();
+  }
+#endif
+
+#ifdef PARAMETRIZED_EQ
+    if (quintessence.theory_quintessence==1)
+    {
+      if(parallel.isRoot())  cout << " \033[1;32m Parametrized implmentation of the extended quintessence in the Newtonian version of gevolution is considered!\033[0m"<< endl;
+    }
+  else
+  {
+    if(parallel.isRoot())  cout << " \033[1;31m ERROR: The parametrized implementation is requested while the code is not compiled with the option! You might need to add DGEVOLUTION  += -DPARAMETqRIZED_EQ  \033[0m"<< endl;
+    parallel.abortForce();
+  }
+#endif
+
+// #if (defined(PARAMETRIZED_EQ) && defined(PARAMETRIZED_EQ))
+// if(parallel.isRoot())  cout << " \033[1;31m ERROR: No Extended quintessence implementaion requestions! You might need to compie with DGEVOLUTION  += -DPARAMETRIZED_EQ  \033[0m"<< endl;
+// parallel.abortForce();
+// #endif
     if( parseParameter(params, numparam, "m_ncdm", cosmo.m_ncdm, cosmo.num_ncdm) )
     {
       COUT << "\033[1;31m ERROR:\n";

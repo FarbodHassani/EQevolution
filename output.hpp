@@ -61,7 +61,13 @@ using namespace std;
 //
 //////////////////////////
 
-void writeSnapshots(metadata & sim, cosmology & cosmo, mg_cosmology & quintessence, const double fourpiG, const double a, const double dtau_old, const int done_hij, const int snapcount, string h5filename, Particles_gevolution<part_simple,part_simple_info,part_simple_dataType> * pcls_cdm, Particles_gevolution<part_simple,part_simple_info,part_simple_dataType> * pcls_b, Particles_gevolution<part_simple,part_simple_info,part_simple_dataType> * pcls_ncdm, Field<Real> * phi, Field<Real> * pi, Field<Real> * V_pi, Field<Real> * chi, Field<Real> * Bi, Field<Real> * source, Field<Real> * Sij, Field<Cplx> * scalarFT, Field<Cplx> * BiFT, Field<Cplx> * SijFT, PlanFFT<Cplx> * plan_phi, PlanFFT<Cplx> * plan_chi, PlanFFT<Cplx> * plan_Bi, PlanFFT<Cplx> * plan_source, PlanFFT<Cplx> * plan_Sij
+void writeSnapshots(metadata & sim, cosmology & cosmo,
+  #ifdef FULL_EQ
+  mg_cosmology & quintessence, Field<Real> * pi, Field<Real> * V_pi,
+  #elif PARAMETRIZED_EQ
+  mg_cosmology & quintessence,
+  #endif
+  const double fourpiG, const double a, const double dtau_old, const int done_hij, const int snapcount, string h5filename, Particles_gevolution<part_simple,part_simple_info,part_simple_dataType> * pcls_cdm, Particles_gevolution<part_simple,part_simple_info,part_simple_dataType> * pcls_b, Particles_gevolution<part_simple,part_simple_info,part_simple_dataType> * pcls_ncdm, Field<Real> * phi, Field<Real> * chi, Field<Real> * Bi, Field<Real> * source, Field<Real> * Sij, Field<Cplx> * scalarFT, Field<Cplx> * BiFT, Field<Cplx> * SijFT, PlanFFT<Cplx> * plan_phi, PlanFFT<Cplx> * plan_chi, PlanFFT<Cplx> * plan_Bi, PlanFFT<Cplx> * plan_source, PlanFFT<Cplx> * plan_Sij
 #ifdef CHECK_B
 , Field<Real> * Bi_check, Field<Cplx> * BiFT_check, PlanFFT<Cplx> * plan_Bi_check
 #endif
@@ -112,12 +118,12 @@ void writeSnapshots(metadata & sim, cosmology & cosmo, mg_cosmology & quintessen
 	if (sim.out_snapshot & MASK_PHI)
 		phi->saveHDF5_server_open(h5filename + filename + "_phi");
   //quintessence
+  #ifdef FULL_EQ
   if (sim.out_snapshot & MASK_PI)
       pi_k->saveHDF5_server_open(h5filename + filename + "_pi");
-
   if (sim.out_snapshot & MASK_V_PI)
       zeta->saveHDF5_server_open(h5filename + filename + "_V_pi");
-
+  #endif
 	if (sim.out_snapshot & MASK_CHI)
 		chi->saveHDF5_server_open(h5filename + filename + "_chi");
 
@@ -256,6 +262,7 @@ void writeSnapshots(metadata & sim, cosmology & cosmo, mg_cosmology & quintessen
 			phi->saveHDF5(h5filename + filename + "_phi.h5");
 #endif
   //quintessence
+#ifdef FULL_EQ
   if (sim.out_snapshot & MASK_PI)
 #ifdef EXTERNAL_IO
     pi->saveHDF5_server_write(NUMBER_OF_IO_FILES);
@@ -274,6 +281,7 @@ if (sim.out_snapshot & MASK_V_PI)
     V_pi->saveHDF5_coarseGrain3D(h5filename + filename + "V_pi.h5", sim.downgrade_factor);
   else
     V_pi->saveHDF5(h5filename + filename + "V_pi.h5");
+#endif
 #endif
 
 	if (sim.out_snapshot & MASK_CHI)
@@ -1793,11 +1801,17 @@ void writeLightcones(metadata & sim, cosmology & cosmo, mg_cosmology & quintesse
 //
 //////////////////////////
 
-void writeSpectra(metadata & sim, cosmology & cosmo, mg_cosmology & quintessence, const double fourpiG, const double a, const int pkcount,
+void writeSpectra(metadata & sim, cosmology & cosmo,
+#ifdef FULL_EQ
+mg_cosmology & quintessence, Field<Real> * pi ,Field<Real> * V_pi, Field<Cplx> * scalarFT_pi, Field<Cplx> * scalarFT_V_pi, PlanFFT<Cplx> * plan_pi , PlanFFT<Cplx> * plan_V_pi,
+#elif PARAMETRIZED_EQ
+mg_cosmology & quintessence,
+#endif
+const double fourpiG, const double a, const int pkcount,
 #ifdef HAVE_CLASS
 background & class_background, perturbs & class_perturbs, icsettings & ic,
 #endif
-Particles_gevolution<part_simple,part_simple_info,part_simple_dataType> * pcls_cdm, Particles_gevolution<part_simple,part_simple_info,part_simple_dataType> * pcls_b, Particles_gevolution<part_simple,part_simple_info,part_simple_dataType> * pcls_ncdm, Field<Real> * phi, Field<Real> * pi ,Field<Real> * V_pi, Field<Real> * chi, Field<Real> * Bi, Field<Real> * source, Field<Real> * Sij, Field<Cplx> * scalarFT, Field<Cplx> * scalarFT_pi, Field<Cplx> * scalarFT_V_pi, Field<Cplx> * BiFT, Field<Cplx> * SijFT, PlanFFT<Cplx> * plan_phi, PlanFFT<Cplx> * plan_pi , PlanFFT<Cplx> * plan_V_pi,  PlanFFT<Cplx> * plan_chi, PlanFFT<Cplx> * plan_Bi, PlanFFT<Cplx> * plan_source, PlanFFT<Cplx> * plan_Sij
+Particles_gevolution<part_simple,part_simple_info,part_simple_dataType> * pcls_cdm, Particles_gevolution<part_simple,part_simple_info,part_simple_dataType> * pcls_b, Particles_gevolution<part_simple,part_simple_info,part_simple_dataType> * pcls_ncdm, Field<Real> * phi,  Field<Real> * chi, Field<Real> * Bi, Field<Real> * source, Field<Real> * Sij, Field<Cplx> * scalarFT, Field<Cplx> * BiFT, Field<Cplx> * SijFT, PlanFFT<Cplx> * plan_phi,  PlanFFT<Cplx> * plan_chi, PlanFFT<Cplx> * plan_Bi, PlanFFT<Cplx> * plan_source, PlanFFT<Cplx> * plan_Sij
 #ifdef CHECK_B
 , Field<Real> * Bi_check, Field<Cplx> * BiFT_check, PlanFFT<Cplx> * plan_Bi_check
 #endif
@@ -1987,6 +2001,7 @@ Particles_gevolution<part_simple,part_simple_info,part_simple_dataType> * pcls_c
   		writePowerSpectrum(kbin, power, kscatter, pscatter, occupation, sim.numbins, sim.boxsize, (Real) numpts3d * (Real) numpts3d * 2. * M_PI * M_PI, filename, "power spectrum of phi", a, sim.z_pk[pkcount]);
   	}
 
+   #ifdef FULL_EQ
   //qintessence
    if (sim.out_pk & MASK_PI)
    {
@@ -1997,7 +2012,6 @@ Particles_gevolution<part_simple,part_simple_info,part_simple_dataType> * pcls_c
      //TEST:
      writePowerSpectrum(kbin, power, kscatter, pscatter, occupation, sim.numbins, sim.boxsize, (Real) numpts3d * (Real) numpts3d * 2. * M_PI * M_PI/sqrt(2.*fourpiG/3.)/sqrt(2.*fourpiG/3.), filename, "power spectrum of mg field (dimensionless)", a, sim.z_pk[pkcount]);
    }
-
    if (sim.out_pk & MASK_V_PI)
    {
      plan_V_pi->execute(FFT_FORWARD);
@@ -2007,7 +2021,7 @@ Particles_gevolution<part_simple,part_simple_info,part_simple_dataType> * pcls_c
      // TEST:
      writePowerSpectrum(kbin, power, kscatter, pscatter, occupation, sim.numbins, sim.boxsize, (Real) numpts3d * (Real) numpts3d * 2. * M_PI * M_PI, filename, "power spectrum of deltaphi'/H_0 (dimensionless)", a, sim.z_pk[pkcount]);
    }
-
+#endif
 	if (sim.out_pk & MASK_CHI)
 	{
 		plan_chi->execute(FFT_FORWARD);

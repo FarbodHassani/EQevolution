@@ -1623,7 +1623,13 @@ double applyMomentumDistribution(Particles<part_simple,part_simple_info,part_sim
 //
 //////////////////////////
 
-void generateIC_basic(metadata & sim, icsettings & ic, cosmology & cosmo, mg_cosmology & quintessence, const double fourpiG, Particles<part_simple,part_simple_info,part_simple_dataType> * pcls_cdm, Particles<part_simple,part_simple_info,part_simple_dataType> * pcls_b, Particles<part_simple,part_simple_info,part_simple_dataType> * pcls_ncdm, double * maxvel, Field<Real> * pi, Field<Real> * V_pi, Field<Real> * phi, Field<Real> * chi, Field<Real> * Bi, Field<Real> * source, Field<Real> * Sij, Field<Cplx> * scalarFT_pi, Field<Cplx> * scalarFT_V_pi, Field<Cplx> * scalarFT, Field<Cplx> * BiFT, Field<Cplx> * SijFT, PlanFFT<Cplx> * plan_pi,  PlanFFT<Cplx> * plan_V_pi, PlanFFT<Cplx> * plan_phi, PlanFFT<Cplx> * plan_chi, PlanFFT<Cplx> * plan_Bi, PlanFFT<Cplx> * plan_source, PlanFFT<Cplx> * plan_Sij, parameter * params, int & numparam){
+void generateIC_basic(metadata & sim, icsettings & ic, cosmology & cosmo,
+#ifdef FULL_EQ
+   mg_cosmology & quintessence, Field<Real> * pi, Field<Real> * V_pi, Field<Cplx> * scalarFT_pi, Field<Cplx> * scalarFT_V_pi, PlanFFT<Cplx> * plan_pi,  PlanFFT<Cplx> * plan_V_pi,
+#elif PARAMETRIZED_EQ
+mg_cosmology & quintessence,
+#endif
+   const double fourpiG, Particles<part_simple,part_simple_info,part_simple_dataType> * pcls_cdm, Particles<part_simple,part_simple_info,part_simple_dataType> * pcls_b, Particles<part_simple,part_simple_info,part_simple_dataType> * pcls_ncdm, double * maxvel, Field<Real> * phi, Field<Real> * chi, Field<Real> * Bi, Field<Real> * source, Field<Real> * Sij, Field<Cplx> * scalarFT, Field<Cplx> * BiFT, Field<Cplx> * SijFT, PlanFFT<Cplx> * plan_phi, PlanFFT<Cplx> * plan_chi, PlanFFT<Cplx> * plan_Bi, PlanFFT<Cplx> * plan_source, PlanFFT<Cplx> * plan_Sij, parameter * params, int & numparam){
 	int i, j, p;
 	double a = 1. / (1. + sim.z_in);
 	float * pcldata = NULL;
@@ -1752,6 +1758,7 @@ void generateIC_basic(metadata & sim, icsettings & ic, cosmology & cosmo, mg_cos
 
 
  #ifdef HAVE_CLASS
+ #ifdef FULL_EQ
 //////////////////////////////////////////////////////
  ////quintessence IC part//////
  //////////////////////////////////////////////////////
@@ -1814,7 +1821,8 @@ void generateIC_basic(metadata & sim, icsettings & ic, cosmology & cosmo, mg_cos
  free(k_mg);
  free(scalar_field_prime);
  }
-  #endif
+#endif
+#endif
  //////////////////////////////////////////////////////
  //// End of K_essence IC part/
  //////////////////////////////////////////////////////
